@@ -1882,6 +1882,10 @@ function registerEventListeners() {
 // ============================================================================
 async function initApp() {
   initLocalStorage();
+  registerEventListeners();
+
+  // URL 해시 변경 리스너 등록 및 초기 라우팅 감지 실행
+  window.addEventListener("hashchange", handleRouting);
 
   if (window.isFirebaseMode) {
     await initFirebaseData();
@@ -1891,10 +1895,6 @@ async function initApp() {
     }
   }
 
-  registerEventListeners();
-
-  // URL 해시 변경 리스너 등록 및 초기 라우팅 감지 실행
-  window.addEventListener("hashchange", handleRouting);
   handleRouting();
 }
 

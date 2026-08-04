@@ -4,12 +4,12 @@
 // 설정하지 않으면 자동으로 브라우저 내의 로컬 저장소(LocalStorage) 모드로 동작합니다.
 // ============================================================================
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY_HERE",
-  authDomain: "YOUR_AUTH_DOMAIN_HERE",
-  projectId: "YOUR_PROJECT_ID_HERE",
-  storageBucket: "YOUR_STORAGE_BUCKET_HERE",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID_HERE",
-  appId: "YOUR_APP_ID_HERE"
+  apiKey: "AIzaSyAsk326xyAatoOOyDRvnqYqvruQ5eYj85k",
+  authDomain: "kimijcrm.firebaseapp.com",
+  projectId: "kimijcrm",
+  storageBucket: "kimijcrm.firebasestorage.app",
+  messagingSenderId: "514087280756",
+  appId: "1:514087280756:web:be4003845787118f783121"
 };
 
 // 전역 변수로 데이터베이스 연결 제어 (CORS 및 로컬 파일 직접 열기 차단 방지)
