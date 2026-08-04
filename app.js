@@ -431,6 +431,14 @@ async function dbDeleteRecord(recordId) {
 // 3. UI 및 상태 제어
 // ============================================================================
 let currentClient = null;
+try {
+  const _stored = sessionStorage.getItem("crm_current_client");
+  if (_stored) {
+    currentClient = JSON.parse(_stored);
+  }
+} catch (e) {
+  console.error("Session parse error:", e);
+}
 let selectedCounselingType = null;
 let currentRecordId = null;
 let currentDrawerClient = null;
@@ -603,6 +611,7 @@ function renderView(viewId) {
     DOM.loginBirth.value = "";
     currentClient = null;
     selectedCounselingType = null;
+    sessionStorage.removeItem("crm_current_client");
   } else if (viewId === "client-select") {
     DOM.clientSelectView.classList.remove("hidden");
     DOM.currentClientDisplay.textContent = currentClient.name;
@@ -737,6 +746,7 @@ async function handleClientLogin(e) {
 
   if (matchedClient) {
     currentClient = matchedClient;
+    sessionStorage.setItem("crm_current_client", JSON.stringify(matchedClient));
     showToast(`${name}님, 환영합니다!`, "success");
     showView("client-select");
   } else {
