@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>온마음 심리상담소 - CRM</title>
+  <style>
+    @layer base {
+      html, body {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        overscroll-behavior: none;
+      }
+      main > :first-child {
+        margin-top: 0 !important;
+      }
+      main > :last-child {
+        margin-bottom: 0 !important;
+      }
+    }
+    ::-webkit-scrollbar {
+      display: none;
+    }
+    @keyframes drawCheck {
+      to {
+        stroke-dashoffset: 0;
+      }
+    }
+    .path-draw {
+      animation: drawCheck 0.8s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+      animation-delay: 0.3s;
+    }
+  </style>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "error-container": "#ffdad6",
+            "secondary-fixed": "#e1e1f5",
+            "on-background": "#0d1d2a",
+            "outline": "#74796c",
+            "on-secondary-fixed": "#191b29",
+            "tertiary": "#5e604d",
+            "secondary-container": "#e1e1f5",
+            "on-tertiary-container": "#353726",
+            "error": "#ba1a1a",
+            "secondary": "#5c5d6e",
+            "on-secondary-fixed-variant": "#444655",
+            "inverse-primary": "#aed18f",
+            "on-primary-fixed-variant": "#314e1b",
+            "on-tertiary": "#ffffff",
+            "on-primary": "#ffffff",
+            "on-secondary-container": "#626374",
+            "surface-tint": "#486730",
+            "on-error": "#ffffff",
+            "on-tertiary-fixed-variant": "#474836",
+            "on-tertiary-fixed": "#1b1d0e",
+            "on-error-container": "#93000a",
+            "primary-container": "#87a96b",
+            "surface-container-highest": "#d4e4f6",
+            "tertiary-container": "#9fa08a",
+            "primary": "#486730",
+            "primary-fixed": "#c9eea9",
+            "surface": "#f7f9ff",
+            "inverse-surface": "#223240",
+            "surface-container": "#e2efff",
+            "surface-container-low": "#ecf4ff",
+            "on-primary-fixed": "#0b2000",
+            "surface-dim": "#cbdcee",
+            "secondary-fixed-dim": "#c5c5d8",
+            "surface-bright": "#f7f9ff",
+            "on-surface": "#0d1d2a",
+            "on-secondary": "#ffffff",
+            "inverse-on-surface": "#e7f2ff",
+            "on-primary-container": "#213d0b",
+            "tertiary-fixed": "#e4e4cc",
+            "background": "#f7f9ff",
+            "primary-fixed-dim": "#aed18f",
+            "on-surface-variant": "#43483d",
+            "surface-variant": "#d4e4f6",
+            "surface-container-high": "#d9eafc",
+            "tertiary-fixed-dim": "#c8c8b0",
+            "surface-container-lowest": "#ffffff",
+            "outline-variant": "#c4c8ba"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "gutter": "24px",
+            "lg": "40px",
+            "margin-desktop": "48px",
+            "md": "24px",
+            "sm": "12px",
+            "margin-mobile": "16px",
+            "xs": "4px",
+            "base": "8px",
+            "xl": "64px"
+          },
+          "fontFamily": {
+            "display-lg": ["Plus Jakarta Sans"],
+            "headline-sm": ["Plus Jakarta Sans"],
+            "body-sm": ["Noto Sans"],
+            "label-md": ["Noto Sans"],
+            "body-lg": ["Noto Sans"],
+            "label-sm": ["Noto Sans"],
+            "headline-lg": ["Plus Jakarta Sans"],
+            "headline-md": ["Plus Jakarta Sans"],
+            "body-md": ["Noto Sans"]
+          },
+          "fontSize": {
+            "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+            "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "label-md": ["14px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+            "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+            "label-sm": ["12px", { "lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+            "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+            "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+          }
+        }
+      }
+    };
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@100..900&amp;family=Plus+Jakarta+Sans:wght@100..900&amp;display=swap" rel="stylesheet">
+</head>
+<body class="bg-background font-body-md text-on-surface">
+
+  <!-- Firebase 미연동 시 로컬 스토리지 알림 배너 -->
+  <div id="firebase-notice-banner" class="hidden bg-amber-500 text-white text-center py-2 px-4 text-sm font-medium flex justify-center items-center gap-4 z-[9999] relative shadow-md">
+    <span>⚠️ 현재 <strong>로컬 테스트 모드(LocalStorage)</strong>로 작동 중입니다. 데이터가 브라우저에만 저장됩니다.</span>
+    <button id="btn-close-banner" class="bg-white/20 border border-white/40 text-white px-2 py-0.5 rounded text-xs hover:bg-white/30 transition-colors">닫기</button>
+  </div>
+
+  <div id="app">
+
+    <!-- =======================================================================
+         1. 내담자 로그인 화면 (design/_1/code.html)
+         ======================================================================= -->
+    <section id="client-login-view" class="min-h-screen w-full flex items-center justify-center p-6 bg-[#e0ecdb]">
+      <main class="w-full max-w-md h-full flex items-center justify-center">
+        <div class="flex flex-col w-full h-full justify-center px-margin-mobile md:px-margin-desktop overflow-hidden">
+          <div class="w-full max-w-md mx-auto relative z-10 flex flex-col">
+            <!-- 로고 / 브랜드 영역 -->
+            <div class="flex flex-col items-center justify-center mb-lg space-y-md">
+              <div class="w-24 h-24 rounded-full bg-surface-container-lowest shadow-sm flex items-center justify-center p-xs">
+                <svg class="w-full h-full text-primary" fill="currentColor" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M50 15 C60 15, 65 30, 65 40 C65 60, 50 85, 50 85 C50 85, 35 60, 35 40 C35 30, 40 15, 50 15 Z" opacity="0.6"></path>
+                  <path d="M50 85 C65 75, 85 60, 85 45 C85 30, 70 20, 55 35 C50 40, 50 85, 50 85 Z" opacity="0.4"></path>
+                  <path d="M50 85 C35 75, 15 60, 15 45 C15 30, 30 20, 45 35 C50 40, 50 85, 50 85 Z" opacity="0.8"></path>
+                  <circle cx="50" cy="40" fill="white" r="8"></circle>
+                </svg>
+              </div>
+              <div class="text-center space-y-xs">
+                <h1 class="font-headline-lg text-headline-lg text-on-surface">온마음 심리상담소</h1>
+                <p class="font-body-md text-body-md text-on-surface-variant">마음의 휴식을 드리는 심리상담소입니다.</p>
+              </div>
+            </div>
+
+            <!-- 로그인 카드 -->
+            <div class="bg-surface-container-lowest/80 backdrop-blur-md rounded-2xl shadow-md p-md border border-outline-variant/30 flex flex-col space-y-md">
+              <form class="flex flex-col space-y-sm" id="form-client-login" onsubmit="return false;">
+                <div class="flex flex-col space-y-xs relative">
+                  <label class="font-label-md text-label-md text-on-surface" for="login-name">성함</label>
+                  <div class="relative">
+                    <span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant/50 pointer-events-none">person</span>
+                    <input class="w-full bg-surface/50 border border-outline-variant/50 rounded-lg py-sm pl-[40px] pr-sm font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all placeholder:text-on-surface-variant/40" id="login-name" placeholder="홍길동" required type="text">
+                  </div>
+                </div>
+                <div class="flex flex-col space-y-xs relative">
+                  <label class="font-label-md text-label-md text-on-surface" for="login-birth">생년월일</label>
+                  <div class="relative">
+                    <span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant/50 pointer-events-none">calendar_month</span>
+                    <input class="w-full bg-surface/50 border border-outline-variant/50 rounded-lg py-sm pl-[40px] pr-sm font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all placeholder:text-on-surface-variant/40" id="login-birth" placeholder="YYYY-MM-DD" required type="text">
+                  </div>
+                  <p class="font-body-sm text-body-sm text-on-surface-variant/70 text-right mt-1">예: 1990-01-01 (대시 자동 입력)</p>
+                </div>
+                <button class="mt-md w-full bg-primary text-on-primary font-label-md text-label-md py-sm rounded-full shadow-sm hover:bg-surface-tint hover:shadow-md transition-all active:scale-[0.98] flex items-center justify-center space-x-2" type="submit">
+                  <span>로그인 / 상담 신청 시작</span>
+                  <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <!-- 관리자 이동 버튼 -->
+          <div class="absolute bottom-margin-mobile md:bottom-margin-desktop right-margin-mobile md:right-margin-desktop z-20">
+            <button id="btn-goto-admin" class="flex items-center space-x-1 text-on-surface-variant/60 hover:text-primary transition-colors font-label-sm text-label-sm group">
+              <span class="material-symbols-outlined text-[16px] group-hover:rotate-12 transition-transform">admin_panel_settings</span>
+              <span>관리자 로그인</span>
+            </button>
+          </div>
+        </div>
+      </main>
+    </section>
+
+    <!-- =======================================================================
+         2. 상담 선택 화면 (design/_2/code.html)
+         ======================================================================= -->
+    <div id="client-select-view" class="hidden min-h-screen flex flex-col justify-between">
+      <header class="fixed top-0 w-full z-50 bg-surface-bright/60 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
+        <div class="h-16 max-w-7xl mx-auto px-6 lg:px-12 flex items-center justify-between">
+          <div class="flex items-center gap-base">
+            <span class="material-symbols-outlined text-primary text-[28px]">spa</span>
+            <span class="font-headline-sm text-headline-sm text-on-surface tracking-tight">Serenity Portal</span>
+          </div>
+          <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+            <span class="material-symbols-outlined text-on-primary text-[18px]">person</span>
+          </div>
+        </div>
+      </header>
+
+      <main class="w-full pt-16 bg-background">
+        <div class="flex flex-col w-full min-h-[calc(100vh-64px)] bg-surface relative overflow-hidden">
+          <!-- Ambient Background -->
+          <div class="absolute inset-0 pointer-events-none overflow-hidden">
+            <div class="absolute -top-[20%] -left-[10%] w-[50vw] h-[50vw] rounded-full bg-primary/5 blur-[100px]"></div>
+            <div class="absolute top-[40%] -right-[20%] w-[60vw] h-[60vw] rounded-full bg-secondary-fixed/30 blur-[120px]"></div>
+          </div>
+          <!-- 메인 콘텐츠 -->
+          <div class="flex-1 w-full max-w-7xl mx-auto px-6 lg:px-12 py-lg lg:py-xl z-10 flex flex-col gap-lg">
+            <!-- 헤더 섹션 -->
+            <div class="flex flex-col gap-sm max-w-2xl">
+              <span class="text-label-sm font-label-sm text-primary tracking-widest uppercase">상담 서비스 접수</span>
+              <h1 class="text-display-lg font-display-lg text-on-surface">
+                <span class="text-primary font-bold" id="current-client-display">김지수</span>님,<br/>
+                어떤 상담이 필요하신가요?
+              </h1>
+              <p class="text-body-lg font-body-lg text-on-surface-variant mt-2">
+                현재 가장 고민되거나 도움이 필요한 영역을 선택해주세요. (상담 신청서가 제출되면 담당 상담사가 배정됩니다.)
+              </p>
+            </div>
+            <!-- 카드 그리드 (JS 동적 바인딩) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-md" id="counseling-grid">
+              <!-- JS 동적 생성 -->
+            </div>
+            <!-- 하단 액션 영역 -->
+            <div class="flex justify-between items-center mt-lg pt-lg border-t border-outline-variant/30">
+              <button class="px-6 py-3 border border-outline text-on-surface rounded-full text-label-md font-label-md hover:bg-surface-variant transition-colors" id="btn-client-logout">
+                처음 화면으로
+              </button>
+              <button class="px-8 py-4 bg-primary text-on-primary rounded-full text-label-md font-label-md shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-md flex items-center gap-xs group" id="btn-client-submit" disabled>
+                답변 작성하기
+                <span class="material-symbols-outlined text-[20px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <footer class="w-full bg-surface-container-low py-12">
+        <div class="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col md:flex-row justify-between items-center gap-md text-on-surface-variant text-label-sm font-label-sm">
+          <div class="flex items-center gap-base">
+            <span class="material-symbols-outlined text-primary text-[20px]">spa</span>
+            <span>© 2026 Serenity Counseling Systems.</span>
+          </div>
+          <div class="flex gap-lg">
+            <span>개인정보처리방침</span>
+            <span>이용약관</span>
+            <span>고객센터</span>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <!-- =======================================================================
+         5. 상담 질문지 화면 (design/_9/code.html 통합 및 고도화)
+         ======================================================================= -->
+    <div id="client-questionnaire-view" class="hidden min-h-screen flex flex-col justify-between">
+      <header class="fixed top-0 w-full z-50 bg-surface-bright/60 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
+        <div class="h-16 max-w-7xl mx-auto px-6 lg:px-12 flex items-center justify-between">
+          <div class="flex items-center gap-base">
+            <span class="material-symbols-outlined text-primary text-[28px]">spa</span>
+            <span class="font-headline-sm text-headline-sm text-on-surface tracking-tight">Serenity Portal</span>
+          </div>
+          <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+            <span class="material-symbols-outlined text-on-primary text-[18px]">person</span>
+          </div>
+        </div>
+      </header>
+
+      <main class="w-full pt-16 bg-background">
+        <div class="flex flex-col w-full min-h-[calc(100vh-64px)] bg-surface relative overflow-hidden pb-xl">
+          <!-- Ambient Background -->
+          <div class="absolute inset-0 pointer-events-none overflow-hidden">
+            <div class="absolute top-0 right-0 w-1/2 h-[500px] bg-primary/5 rounded-bl-[120px] -z-10 blur-3xl"></div>
+            <div class="absolute bottom-0 left-0 w-1/3 h-[400px] bg-tertiary-container/10 rounded-tr-[100px] -z-10 blur-2xl"></div>
+          </div>
+          
+          <div class="flex flex-col max-w-[800px] mx-auto w-full pt-md px-6 z-10">
+            <!-- Header Section -->
+            <div class="flex flex-col items-center text-center mb-xl">
+              <div class="w-16 h-16 rounded-full bg-surface-container-low flex items-center justify-center mb-md shadow-sm border border-outline-variant/30">
+                <span class="material-symbols-outlined text-primary text-[32px] font-light">spa</span>
+              </div>
+              <h1 class="font-display-lg text-display-lg text-on-surface mb-sm tracking-tight">상담 질문지</h1>
+              <p class="font-body-lg text-body-lg text-on-surface-variant max-w-lg">편안한 마음으로 답변해 주세요.</p>
+            </div>
+
+            <!-- Progress & Context Card -->
+            <div class="bg-surface-container/60 backdrop-blur-md rounded-2xl p-md mb-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-md border border-outline-variant/20 shadow-sm">
+              <div class="flex items-center gap-sm">
+                <div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center">
+                  <span class="material-symbols-outlined text-on-primary-container text-[20px]">spa</span>
+                </div>
+                <div class="flex flex-col">
+                  <span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">선택한 상담</span>
+                  <span id="questionnaire-service-title" class="font-headline-sm text-headline-sm text-on-surface">-</span>
+                </div>
+              </div>
+              <div class="flex flex-col items-end w-full md:w-auto">
+                <span class="font-label-md text-label-md text-primary mb-xs">질문지 단계</span>
+                <div class="w-full md:w-48 h-2 bg-surface-variant rounded-full overflow-hidden">
+                  <div class="h-full bg-primary w-full rounded-full transition-all duration-700 ease-out"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Dynamic Questionnaire Form -->
+            <form id="form-client-questionnaire" onsubmit="return false;" class="bg-surface-container-lowest rounded-[24px] shadow-[0_8px_32px_rgba(112,128,144,0.06)] border border-outline-variant/10 p-lg md:p-xl flex flex-col gap-xl relative overflow-hidden group">
+              <!-- Dynamic content injected here -->
+              <div id="dynamic-questions-container" class="flex flex-col gap-xl"></div>
+              
+              <!-- Action Buttons -->
+              <div class="flex justify-between items-center mt-xl border-t border-outline-variant/20 pt-lg">
+                <button type="button" id="btn-questionnaire-back" class="flex items-center gap-sm px-lg py-sm rounded-full border border-primary text-primary hover:bg-primary/5 transition-colors group">
+                  <span class="material-symbols-outlined text-[20px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
+                  <span class="font-label-md text-label-md">이전</span>
+                </button>
+                <button type="submit" class="flex items-center gap-sm px-lg py-sm rounded-full bg-primary text-on-primary hover:bg-primary/90 hover:shadow-md hover:-translate-y-0.5 transition-all group">
+                  <span class="font-label-md text-label-md">최종 제출</span>
+                  <span class="material-symbols-outlined text-[20px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- =======================================================================
+         3. 제출 완료 화면 (design/_5/code.html)
+         ======================================================================= -->
+    <div id="client-success-view" class="hidden min-h-screen flex flex-col justify-between">
+      <header class="fixed top-0 w-full z-50 bg-surface-bright/60 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
+        <div class="h-16 max-w-7xl mx-auto px-6 lg:px-12 flex items-center justify-between">
+          <div class="flex items-center gap-base">
+            <span class="material-symbols-outlined text-primary text-[28px]">spa</span>
+            <span class="font-headline-sm text-headline-sm text-on-surface tracking-tight">Serenity Portal</span>
+          </div>
+          <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+            <span class="material-symbols-outlined text-on-primary text-[18px]">person</span>
+          </div>
+        </div>
+      </header>
+
+      <main class="w-full pt-16 bg-background">
+        <div class="flex flex-col w-full min-h-[calc(100vh-64px)] items-center justify-center p-6 md:p-12 relative overflow-hidden">
+          <!-- Ambient Background Decor -->
+          <div class="absolute inset-0 pointer-events-none overflow-hidden">
+            <div class="absolute top-1/4 -left-1/4 w-[120%] h-[120%] rounded-full bg-gradient-to-tr from-surface-container via-surface-variant to-surface opacity-60 blur-3xl mix-blend-multiply animate-pulse" style="animation-duration: 8s;"></div>
+            <div class="absolute -bottom-1/4 -right-1/4 w-full h-full rounded-full bg-gradient-to-tl from-primary/10 via-surface-container-high to-transparent opacity-50 blur-3xl mix-blend-multiply animate-pulse" style="animation-duration: 12s;"></div>
+          </div>
+          <!-- 컨텐츠 박스 -->
+          <div class="relative w-full max-w-2xl bg-surface-container-lowest/80 backdrop-blur-xl rounded-3xl shadow-[0_8px_32px_rgba(112,128,144,0.08)] border border-outline-variant/30 p-10 md:p-16 text-center z-10">
+            <!-- 애니메이션 체크 아이콘 -->
+            <div class="relative w-24 h-24 mx-auto mb-8 flex items-center justify-center">
+              <div class="absolute inset-0 bg-primary-fixed rounded-full opacity-30 animate-ping" style="animation-duration: 3s;"></div>
+              <div class="absolute inset-0 bg-primary-fixed rounded-full shadow-[0_4px_16px_rgba(72,103,48,0.2)] flex items-center justify-center overflow-hidden">
+                <svg class="w-12 h-12 text-on-primary-fixed drop-shadow-md check-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path class="path-draw" d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="3" style="stroke-dasharray: 40; stroke-dashoffset: 40;"></path>
+                </svg>
+              </div>
+            </div>
+            <!-- 텍스트 -->
+            <h1 class="font-headline-lg text-headline-lg text-on-surface mb-4 tracking-tight">
+              상담 신청이 완료되었습니다
+            </h1>
+            <p class="font-body-lg text-body-lg text-on-surface-variant max-w-lg mx-auto mb-10 leading-relaxed">
+              마음을 내어주셔서 감사합니다.<br class="hidden sm:block">
+              잠시 대기해 주시면 상담사가 배정되어 곧 안내해 드리겠습니다.
+            </p>
+            <!-- 카운트다운 진행 바 -->
+            <div class="w-full max-w-md mx-auto bg-surface-container rounded-full h-2 mb-4 overflow-hidden relative shadow-inner">
+              <div class="absolute top-0 left-0 h-full bg-primary rounded-full" id="success-progress-bar" style="width: 100%;"></div>
+            </div>
+            <p class="font-label-sm text-label-sm text-secondary mb-10 tracking-wider uppercase">
+              <span id="countdown-timer-display">5</span>초 후 처음 화면으로 이동합니다
+            </p>
+            <!-- 바로가기 버튼 -->
+            <button id="btn-success-home" class="inline-flex items-center justify-center px-8 py-4 bg-transparent border-2 border-primary/20 hover:border-primary text-primary hover:bg-primary hover:text-on-primary rounded-full font-label-md text-label-md transition-all duration-300 shadow-sm hover:shadow-md group">
+              <span class="mr-2">처음 화면으로 즉시 이동</span>
+              <span class="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+            </button>
+          </div>
+        </div>
+      </main>
+
+      <footer class="w-full bg-surface-container-low py-12">
+        <div class="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col md:flex-row justify-between items-center gap-md text-on-surface-variant text-label-sm font-label-sm">
+          <div class="flex items-center gap-base">
+            <span class="material-symbols-outlined text-primary text-[20px]">spa</span>
+            <span>© 2026 Serenity Counseling Systems.</span>
+          </div>
+          <div class="flex gap-lg">
+            <span>개인정보처리방침</span>
+            <span>이용약관</span>
+            <span>고객센터</span>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <!-- =======================================================================
+         4. 관리자 로그인 화면 (design/_3/code.html)
+         ======================================================================= -->
+    <section id="admin-login-view" class="hidden min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-[#ebf5e9] to-[#d4e4cc] p-6">
+      <header class="mb-lg text-center flex flex-col items-center gap-sm mt-xl">
+        <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-sm">
+          <span class="material-symbols-outlined text-primary text-[32px]">spa</span>
+        </div>
+        <h1 class="font-display-lg text-display-lg text-primary tracking-tight">Serenity CRM</h1>
+        <p class="font-body-md text-body-md text-on-surface-variant">Administrative Portal</p>
+      </header>
+      <main class="w-full max-w-[440px] px-margin-mobile">
+        <div class="flex flex-col w-full items-center justify-center relative mb-xl">
+          <div class="relative w-full max-w-[440px] bg-white rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-lg z-10">
+            <div class="text-center mb-lg">
+              <h2 class="font-headline-lg text-headline-lg text-on-surface mb-xs">Welcome Back</h2>
+              <p class="font-body-md text-body-md text-on-surface-variant">관리자 계정정보를 입력하세요</p>
+            </div>
+            <form class="flex flex-col gap-md" id="form-admin-login" onsubmit="return false;">
+              <!-- 아이디 입력 -->
+              <div class="flex flex-col gap-xs">
+                <label class="font-label-sm text-label-sm text-on-surface uppercase" for="admin-username">Username (ID)</label>
+                <div class="relative flex items-center group">
+                  <span class="material-symbols-outlined absolute left-sm text-on-surface-variant/50 group-focus-within:text-primary transition-colors">mail</span>
+                  <input class="w-full bg-[#f4f7f4] border-none rounded-2xl pl-[40px] pr-sm py-sm font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/40 focus:ring-2 focus:ring-primary/20 transition-all" id="admin-username" placeholder="admin" required type="text">
+                </div>
+              </div>
+              <!-- 패스워드 입력 -->
+              <div class="flex flex-col gap-xs">
+                <label class="font-label-sm text-label-sm text-on-surface uppercase" for="admin-password">Password</label>
+                <div class="relative flex items-center group">
+                  <span class="material-symbols-outlined absolute left-sm text-on-surface-variant/50 group-focus-within:text-primary transition-colors">lock</span>
+                  <input class="w-full bg-[#f4f7f4] border-none rounded-2xl pl-[40px] pr-sm py-sm font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/40 focus:ring-2 focus:ring-primary/20 transition-all" id="admin-password" placeholder="••••••••" required type="password">
+                </div>
+              </div>
+              <button class="mt-md w-full bg-primary text-on-primary font-label-md text-label-md py-sm rounded-full shadow-sm hover:bg-surface-tint hover:shadow-md transition-all active:scale-[0.98] flex items-center justify-center space-x-2" type="submit">
+                <span>Sign In to Dashboard</span>
+                <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+              </button>
+            </form>
+          </div>
+        </div>
+        <button id="btn-admin-login-back" class="w-full text-center text-on-surface-variant/60 hover:text-primary transition-colors font-label-sm text-label-sm mt-4">
+          ← 내담자 화면으로 돌아가기
+        </button>
+      </main>
+    </section>
+
+    <!-- =======================================================================
+         5. 관리자 메인 포탈 (design/_8 & _4 통합 구조)
+         ======================================================================= -->
+    <div id="admin-portal-view" class="hidden min-h-screen">
+      
+      <!-- 좌측 네비게이션 사이드바 -->
+      <aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-low/60 backdrop-blur-xl z-50 flex flex-col pt-lg pb-lg shadow-[0_4px_24px_rgba(112,128,144,0.06)]">
+        <div class="px-xl mb-lg flex items-center gap-base">
+          <span class="material-symbols-outlined text-primary text-[32px]">spa</span>
+          <span class="font-headline-sm text-headline-sm text-on-surface tracking-tight">Serenity CRM</span>
+        </div>
+        <nav class="flex-1 px-md space-y-xs">
+          <!-- 탭 메뉴 링크 -->
+          <button id="nav-clients" class="w-full flex items-center px-md py-sm rounded-xl bg-primary-container text-on-primary-container font-semibold transition-all group">
+            <span class="material-symbols-outlined mr-md text-[22px]">group</span>
+            <span class="font-label-md text-label-md">Client List (내담자)</span>
+          </button>
+          <button id="nav-counseling" class="w-full flex items-center px-md py-sm rounded-xl text-on-surface-variant hover:bg-surface-container-high/50 hover:text-on-surface transition-all group">
+            <span class="material-symbols-outlined mr-md text-[22px]">event_note</span>
+            <span class="font-label-md text-label-md">Management (상담 종류)</span>
+          </button>
+        </nav>
+        <div class="px-md mt-auto">
+          <button id="btn-admin-logout" class="w-full flex items-center px-md py-sm rounded-xl text-error hover:bg-error-container/50 transition-all">
+            <span class="material-symbols-outlined mr-md text-[22px]">logout</span>
+            <span class="font-label-md text-label-md">Log Out</span>
+          </button>
+        </div>
+      </aside>
+
+      <!-- 우측 내용 본문 영역 -->
+      <div class="pl-72">
+        <header class="fixed top-0 left-72 right-0 h-20 bg-surface-bright/40 backdrop-blur-md z-40 flex items-center justify-end px-margin-desktop gap-lg shadow-[0_1px_4px_rgba(0,0,0,0.02)]">
+          <div class="flex items-center gap-md">
+            <span class="font-label-md text-on-surface-variant">시스템 관리자</span>
+            <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+              <span class="material-symbols-outlined text-on-primary text-[18px]">person</span>
+            </div>
+          </div>
+        </header>
+
+        <main class="relative pt-20 min-h-screen px-margin-desktop py-lg">
+          
+          <!-- [Tab 1] 내담자 리스트 (design/_8/code.html) -->
+          <div id="tab-clients" class="flex flex-col w-full h-full pb-xl">
+            <div class="flex items-center justify-between mb-lg">
+              <div>
+                <h1 class="font-headline-lg text-headline-lg text-on-surface mb-xs">Client Directory</h1>
+                <p class="font-body-md text-body-md text-on-surface-variant">내담자 리스트와 상담 신청 기록을 조회합니다.</p>
+              </div>
+              <button class="flex items-center gap-xs bg-primary hover:bg-primary/90 text-on-primary px-md py-sm rounded-full transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5" id="btn-open-register-modal">
+                <span class="material-symbols-outlined text-[20px]">person_add</span>
+                <span class="font-label-md text-label-md">Register Client (내담자 등록)</span>
+              </button>
+            </div>
+
+            <!-- 대시보드 통계 정보 -->
+            <div class="grid grid-cols-3 gap-md mb-lg bg-surface-container-low p-md rounded-2xl shadow-sm">
+              <div class="bg-white p-sm rounded-xl flex items-center gap-md">
+                <div class="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-bold">👥</div>
+                <div>
+                  <div id="stat-total-clients" class="text-headline-sm font-bold text-on-surface">0</div>
+                  <div class="text-label-sm text-on-surface-variant">총 등록 내담자</div>
+                </div>
+              </div>
+              <div class="bg-white p-sm rounded-xl flex items-center gap-md">
+                <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center font-bold">⏳</div>
+                <div>
+                  <div id="stat-pending-sessions" class="text-headline-sm font-bold text-on-surface">0</div>
+                  <div class="text-label-sm text-on-surface-variant">대기 중인 상담</div>
+                </div>
+              </div>
+              <div class="bg-white p-sm rounded-xl flex items-center gap-md">
+                <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-bold">✓</div>
+                <div>
+                  <div id="stat-completed-sessions" class="text-headline-sm font-bold text-on-surface">0</div>
+                  <div class="text-label-sm text-on-surface-variant">완료된 상담 (오늘)</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 테이블 카드 컨테이너 -->
+            <div class="bg-surface-container-lowest rounded-2xl shadow-sm overflow-hidden flex flex-col">
+              <div class="p-md flex items-center justify-between bg-surface-container-lowest border-b border-surface-container-high relative z-10">
+                <div class="flex items-center gap-sm bg-surface-container-low rounded-full px-sm py-xs w-96 transition-all focus-within:ring-2 focus-within:ring-primary/30">
+                  <span class="material-symbols-outlined text-on-surface-variant ml-xs">search</span>
+                  <input id="search-client" class="bg-transparent border-none focus:ring-0 font-body-sm text-body-sm text-on-surface w-full placeholder:text-on-surface-variant/60" placeholder="성함 또는 생년월일 검색..." type="text">
+                </div>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                  <thead>
+                    <tr class="bg-surface-container-lowest border-b border-surface-container-high">
+                      <th class="py-sm px-md font-label-sm text-label-sm text-on-surface-variant w-[25%]">Client Name</th>
+                      <th class="py-sm px-md font-label-sm text-label-sm text-on-surface-variant w-[20%]">Birth Date</th>
+                      <th class="py-sm px-md font-label-sm text-label-sm text-on-surface-variant w-[20%]">Registration Date</th>
+                      <th class="py-sm px-md font-label-sm text-label-sm text-on-surface-variant w-[25%]">Recent Request</th>
+                      <th class="py-sm px-md font-label-sm text-label-sm text-on-surface-variant w-[10%] text-right">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="client-list-table-body" class="font-body-sm text-body-sm text-on-surface divide-y divide-surface-container-low">
+                    <!-- JS동적 생성 -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- [Tab 2] 심리상담 종류 관리 (design/_4/code.html) -->
+          <div id="tab-counseling" class="hidden flex flex-col w-full relative min-h-[calc(100vh-80px)]">
+            <div class="flex items-end justify-between mb-xl">
+              <div class="flex flex-col gap-sm">
+                <div class="flex items-center gap-xs font-label-md text-on-surface-variant uppercase tracking-wider">
+                  <span>Management</span>
+                  <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+                  <span class="text-primary font-bold">Counseling Types</span>
+                </div>
+                <h1 class="font-display-lg text-on-surface tracking-tight">Manage Services</h1>
+                <p class="font-body-lg text-on-surface-variant max-w-2xl mt-xs">
+                  상담소에서 운영하는 심리상담 종류를 관리합니다. 변경사항은 즉시 손님 화면(신청 페이지)에 노출 또는 제외됩니다.
+                </p>
+              </div>
+              <button class="flex items-center gap-base px-md py-sm bg-primary text-on-primary rounded-full hover:bg-surface-tint hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 group" id="btn-open-counseling-modal">
+                <span class="material-symbols-outlined text-[20px] group-hover:rotate-90 transition-transform duration-300">add</span>
+                <span class="font-label-md text-label-md">Add New Service</span>
+              </button>
+            </div>
+
+            <!-- 상담 리스트 카드 그리드 -->
+            <div class="grid grid-cols-12 gap-gutter w-full" id="counseling-management-grid">
+              <!-- JS 동적 생성 -->
+            </div>
+          </div>
+
+        </main>
+      </div>
+    </div>
+
+    <!-- =======================================================================
+         6. 모달 및 레이어들 (Modals & Drawer Layers)
+         ======================================================================= -->
+    
+    <!-- 1) 최종 제출 확인 모달 (design/_2) -->
+    <div class="fixed inset-0 z-[100] bg-inverse-surface/40 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300 flex items-center justify-center p-6" id="confirm-modal">
+      <div class="bg-surface rounded-2xl p-8 max-w-md w-full shadow-xl transform scale-95 transition-transform duration-300" id="modal-content">
+        <div class="flex items-center justify-center w-16 h-16 rounded-full bg-primary-container mb-6 mx-auto">
+          <span class="material-symbols-outlined text-[32px] text-on-primary-container">spa</span>
+        </div>
+        <h3 class="text-headline-sm text-center text-on-surface mb-2">선택을 완료하시겠습니까?</h3>
+        <p class="text-body-md text-center text-on-surface-variant mb-8">
+          선택하신 상담 신청이 최종 제출됩니다. 이후 일정 조율을 위해 담당 상담사가 연락을 드릴 예정입니다.
+        </p>
+        <div class="flex gap-4">
+          <button class="flex-1 py-3 px-4 rounded-full border border-outline text-on-surface text-label-md font-label-md hover:bg-surface-variant transition-colors" id="btn-confirm-cancel">
+            돌아가기
+          </button>
+          <button class="flex-1 py-3 px-4 rounded-full bg-primary text-on-primary text-label-md font-label-md shadow-sm hover:shadow-md transition-shadow" id="btn-confirm-submit-ok">
+            신청 완료
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2) 내담자 등록 모달 (design/_8/code.html) -->
+    <div class="fixed inset-0 z-[80] hidden flex items-center justify-center" id="register-modal">
+      <div class="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm" id="btn-close-register-overlay"></div>
+      <div class="bg-surface-container-lowest rounded-3xl shadow-xl w-full max-w-lg relative z-10 overflow-hidden flex flex-col max-h-[90vh]">
+        <div class="p-lg bg-surface-container border-b border-surface-container-high flex justify-between items-center shrink-0">
+          <h2 class="font-headline-md text-headline-md text-on-surface">Register New Client</h2>
+          <button class="p-xs rounded-full hover:bg-surface-container-high text-on-surface-variant transition-colors btn-close-register">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <form id="form-register-client" onsubmit="return false;">
+          <div class="p-lg overflow-y-auto space-y-md">
+            <div>
+              <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">성함</label>
+              <input id="register-name" class="w-full bg-surface-container-low border border-surface-container-high rounded-xl px-md py-sm font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-on-surface" type="text" placeholder="이름 입력" required>
+            </div>
+            <div>
+              <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">생년월일</label>
+              <input id="register-birth" class="w-full bg-surface-container-low border border-surface-container-high rounded-xl px-md py-sm font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-on-surface" type="text" placeholder="YYYY-MM-DD" required>
+            </div>
+            <div>
+              <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">핸드폰 번호</label>
+              <input id="register-phone" class="w-full bg-surface-container-low border border-surface-container-high rounded-xl px-md py-sm font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-on-surface" type="text" placeholder="010-0000-0000" required>
+            </div>
+          </div>
+          <div class="p-md bg-surface-container-lowest border-t border-surface-container-high flex justify-end gap-sm shrink-0">
+            <button type="button" class="px-md py-sm rounded-full font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-low transition-colors btn-close-register">Cancel</button>
+            <button type="submit" class="px-md py-sm rounded-full bg-primary hover:bg-primary/90 text-on-primary font-label-md text-label-md shadow-sm transition-colors">Save Client</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- 3) 새 상담 종류 추가 모달 (design/_4/code.html) -->
+    <div class="fixed inset-0 z-[80] hidden flex items-center justify-center p-md" id="add-service-modal">
+      <div class="absolute inset-0 bg-on-background/20 backdrop-blur-md" id="btn-close-service-overlay"></div>
+      <div class="relative w-full max-w-2xl bg-surface-container-lowest rounded-2xl shadow-xl border border-outline-variant/20 transform transition-all max-h-[90vh] overflow-y-auto">
+        <form id="form-add-counseling" onsubmit="return false;">
+          <div class="p-lg">
+            <div class="flex items-center justify-between mb-lg">
+              <h2 class="font-headline-md text-on-surface">새로운 상담 서비스 추가</h2>
+              <button type="button" class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors btn-close-service">
+                <span class="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div class="space-y-md">
+              <div class="flex flex-col gap-xs">
+                <label class="font-label-md text-on-surface-variant">프로그램명</label>
+                <input id="add-counseling-title" class="w-full px-md py-sm rounded-xl bg-surface-container border border-outline-variant/30 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-on-surface" placeholder="예: 가족 상담" type="text" required>
+              </div>
+              <div class="flex flex-col gap-xs">
+                <label class="font-label-md text-on-surface-variant">설명</label>
+                <textarea id="add-counseling-desc" class="w-full px-md py-sm rounded-xl bg-surface-container border border-outline-variant/30 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-on-surface resize-none" placeholder="서비스 목표 및 방법론을 설명해주세요..." rows="3" required></textarea>
+              </div>
+              
+              <!-- 질문 추가 에디터 영역 -->
+              <div class="mt-lg pt-lg border-t border-outline-variant/30">
+                <div class="flex items-center justify-between mb-md">
+                  <h3 class="font-headline-sm text-on-surface">질문 구성 (상담 설문지)</h3>
+                  <div class="flex gap-sm">
+                    <button type="button" id="btn-add-choice-q" class="flex items-center gap-xs px-sm py-1 bg-surface-container hover:bg-surface-container-high rounded-full font-label-sm text-label-sm text-on-surface-variant transition-colors">
+                      <span class="material-symbols-outlined text-[16px]">list</span>
+                      객관식 추가
+                    </button>
+                    <button type="button" id="btn-add-text-q" class="flex items-center gap-xs px-sm py-1 bg-surface-container hover:bg-surface-container-high rounded-full font-label-sm text-label-sm text-on-surface-variant transition-colors">
+                      <span class="material-symbols-outlined text-[16px]">edit_note</span>
+                      주관식 추가
+                    </button>
+                  </div>
+                </div>
+                <!-- 질문 리스트가 추가되는 컨테이너 -->
+                <div id="add-questions-list" class="space-y-md p-sm bg-surface-container-low/50 rounded-2xl min-h-[100px] border border-dashed border-outline-variant/30 max-h-[300px] overflow-y-auto">
+                  <p class="no-questions-msg text-center text-on-surface-variant/40 py-8 text-body-sm">추가된 질문이 없습니다. 손님은 기본 질문지(4문항)에 답변하게 됩니다.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="px-lg py-md bg-surface-container-low flex items-center justify-end gap-md">
+            <button type="button" class="px-md py-sm rounded-full font-label-md text-on-surface-variant hover:bg-surface-container-high transition-colors btn-close-service">취소</button>
+            <button type="submit" class="px-xl py-sm bg-primary text-on-primary rounded-full font-label-md hover:bg-surface-tint hover:shadow-lg transition-all transform hover:-translate-y-0.5">저장하기</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- 4) 상담 종류 수정 모달 (커스텀) -->
+    <div class="fixed inset-0 z-[80] hidden flex items-center justify-center p-md" id="edit-service-modal">
+      <div class="absolute inset-0 bg-on-background/20 backdrop-blur-md" onclick="document.getElementById('edit-service-modal').classList.add('hidden')"></div>
+      <div class="relative w-full max-w-2xl bg-surface-container-lowest rounded-2xl shadow-xl border border-outline-variant/20 transform transition-all max-h-[90vh] overflow-y-auto">
+        <form id="form-edit-counseling" onsubmit="return false;">
+          <input type="hidden" id="edit-counseling-id">
+          <div class="p-lg">
+            <div class="flex items-center justify-between mb-lg">
+              <h2 class="font-headline-md text-on-surface">상담 서비스 정보 수정</h2>
+              <button type="button" class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors" onclick="document.getElementById('edit-service-modal').classList.add('hidden')">
+                <span class="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div class="space-y-md">
+              <div class="flex flex-col gap-xs">
+                <label class="font-label-md text-on-surface-variant">프로그램명</label>
+                <input id="edit-counseling-title" class="w-full px-md py-sm rounded-xl bg-surface-container border border-outline-variant/30 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-on-surface" type="text" required>
+              </div>
+              <div class="flex flex-col gap-xs">
+                <label class="font-label-md text-on-surface-variant">설명</label>
+                <textarea id="edit-counseling-desc" class="w-full px-md py-sm rounded-xl bg-surface-container border border-outline-variant/30 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-on-surface resize-none" rows="3" required></textarea>
+              </div>
+              
+              <!-- 질문 추가 에디터 영역 -->
+              <div class="mt-lg pt-lg border-t border-outline-variant/30">
+                <div class="flex items-center justify-between mb-md">
+                  <h3 class="font-headline-sm text-on-surface">질문 구성 (상담 설문지)</h3>
+                  <div class="flex gap-sm">
+                    <button type="button" id="btn-edit-add-choice-q" class="flex items-center gap-xs px-sm py-1 bg-surface-container hover:bg-surface-container-high rounded-full font-label-sm text-label-sm text-on-surface-variant transition-colors">
+                      <span class="material-symbols-outlined text-[16px]">list</span>
+                      객관식 추가
+                    </button>
+                    <button type="button" id="btn-edit-add-text-q" class="flex items-center gap-xs px-sm py-1 bg-surface-container hover:bg-surface-container-high rounded-full font-label-sm text-label-sm text-on-surface-variant transition-colors">
+                      <span class="material-symbols-outlined text-[16px]">edit_note</span>
+                      주관식 추가
+                    </button>
+                  </div>
+                </div>
+                <!-- 질문 리스트가 추가되는 컨테이너 -->
+                <div id="edit-questions-list" class="space-y-md p-sm bg-surface-container-low/50 rounded-2xl min-h-[100px] border border-dashed border-outline-variant/30 max-h-[300px] overflow-y-auto">
+                  <p class="no-questions-msg text-center text-on-surface-variant/40 py-8 text-body-sm">추가된 질문이 없습니다. 손님은 기본 질문지(4문항)에 답변하게 됩니다.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="px-lg py-md bg-surface-container-low flex items-center justify-end gap-md">
+            <button type="button" class="px-md py-sm rounded-full font-label-md text-on-surface-variant hover:bg-surface-container-high transition-colors" onclick="document.getElementById('edit-service-modal').classList.add('hidden')">취소</button>
+            <button type="submit" class="px-xl py-sm bg-primary text-on-primary rounded-full font-label-md hover:bg-surface-tint hover:shadow-lg transition-all transform hover:-translate-y-0.5">수정 완료</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- =======================================================================
+         7. 내담자 정보 슬라이드 아웃 패널 (Drawer) (design/_8/code.html)
+         ======================================================================= -->
+    <div class="fixed inset-0 bg-inverse-surface/20 backdrop-blur-sm z-[60] hidden opacity-0 transition-opacity duration-300" id="client-drawer-overlay" onclick="closeDrawer()"></div>
+    <div class="fixed top-0 right-0 h-full w-[600px] bg-surface-container-lowest z-[70] shadow-2xl translate-x-full transition-transform duration-300 ease-out flex flex-col rounded-l-3xl overflow-hidden" id="client-drawer">
+      <div class="p-lg bg-surface-container flex items-start justify-between relative shrink-0">
+        <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 80% 20%, var(--tw-colors-primary) 0%, transparent 40%);"></div>
+        <div class="flex items-center gap-md relative z-10">
+          <div id="drawer-avatar" class="w-16 h-16 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-display-lg text-display-lg">
+            EJ
+          </div>
+          <div>
+            <h2 id="drawer-client-name" class="font-headline-lg text-headline-lg text-on-surface mb-xs">-</h2>
+            <div class="flex gap-sm font-label-sm text-label-sm text-on-surface-variant">
+              <span>생년월일: <span id="drawer-client-birth">-</span></span>
+              <span>•</span>
+              <span>등록일: <span id="drawer-client-regdate">-</span></span>
+            </div>
+          </div>
+        </div>
+        <button class="p-xs rounded-full hover:bg-surface-container-high text-on-surface-variant transition-colors relative z-10" onclick="closeDrawer()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      
+      <div class="flex-1 overflow-y-auto p-lg bg-surface-container-lowest">
+        <!-- 기본 연락 사항 (하드코딩 고정 샘플) -->
+        <div class="mb-lg">
+          <h3 class="font-headline-md text-headline-md text-on-surface mb-md">Personal Information</h3>
+          <div class="grid grid-cols-2 gap-md">
+            <div class="bg-surface-container-low p-sm rounded-xl">
+              <span class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">연락처</span>
+              <span id="drawer-client-phone" class="block font-body-md text-body-md text-on-surface">-</span>
+            </div>
+            <div class="bg-surface-container-low p-sm rounded-xl">
+              <span class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">이메일</span>
+              <span class="block font-body-md text-body-md text-on-surface">client@counseling.com</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 상담 배정 섹션 -->
+        <div class="mb-lg pt-lg border-t border-surface-container-high">
+          <h3 class="font-headline-md text-headline-md text-on-surface mb-md">Assign New Counseling (상담 배정)</h3>
+          <form id="form-assign-counseling" onsubmit="return false;" class="space-y-md">
+            <div>
+              <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">상담 프로그램 선택</label>
+              <div class="relative">
+                <select id="assign-counseling-select" class="w-full appearance-none bg-surface-container-low border border-surface-container-high rounded-xl px-md py-sm font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-on-surface">
+                  <!-- JS 동적 주입 -->
+                </select>
+                <span class="material-symbols-outlined absolute right-md top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">expand_more</span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between p-sm bg-surface-container-low rounded-xl">
+              <div class="flex items-center gap-sm">
+                <span class="material-symbols-outlined text-primary">info</span>
+                <span class="font-body-sm text-body-sm text-on-surface-variant">상태는 '대기중'으로 등록됩니다</span>
+              </div>
+              <button type="submit" class="bg-primary hover:bg-primary/90 text-on-primary px-lg py-sm rounded-full font-label-md text-label-md shadow-sm transition-all hover:shadow-md">
+                Assign (배정하기)
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- 상담 신청 및 진행 내역 타임라인 -->
+        <div class="mb-lg pt-lg border-t border-surface-container-high">
+          <h3 class="font-headline-md text-headline-md text-on-surface mb-md">Counseling History (기록 역사)</h3>
+          <div id="drawer-history-list" class="relative border-l-2 border-surface-container-high ml-sm space-y-md">
+            <!-- JS 동적 생성 -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 토스트 알림창 컨테이너 (design/_1) -->
+    <div class="fixed bottom-xl left-1/2 -translate-x-1/2 z-[1000] flex flex-col space-y-2 pointer-events-none" id="toastContainer"></div>
+
+  </div>
+
+  <!-- Firebase Compat 라이브러리 로드 -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <!-- 설정 파일 로드 후 메인 앱 로드 (모듈 해제하여 로컬 더블클릭 실행 지원) -->
+  <script src="firebase-config.js"></script>
+  <script src="app.js"></script>
+  
+  <!-- 서랍장 열고 닫는 전역 스크립트 바인딩 -->
+  <script>
+    function openDrawer() {
+      const overlay = document.getElementById('client-drawer-overlay');
+      const drawer = document.getElementById('client-drawer');
+      
+      overlay.classList.remove('hidden');
+      setTimeout(() => {
+        overlay.classList.remove('opacity-0');
+        drawer.classList.remove('translate-x-full');
+      }, 10);
+    }
+
+    function closeDrawer() {
+      const overlay = document.getElementById('client-drawer-overlay');
+      const drawer = document.getElementById('client-drawer');
+      
+      if (!overlay || !drawer) return;
+      overlay.classList.add('opacity-0');
+      drawer.classList.add('translate-x-full');
+      
+      setTimeout(() => {
+        overlay.classList.add('hidden');
+      }, 300);
+    }
+  </script>
+</body>
+</html>
