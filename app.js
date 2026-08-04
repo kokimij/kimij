@@ -554,7 +554,37 @@ const DOM = {
 // ============================================================================
 // 4. 화면 네비게이션 제어
 // ============================================================================
+// Hash mappings to view IDs
+const HASH_TO_VIEW = {
+  "#/login": "client-login",
+  "#/select": "client-select",
+  "#/questionnaire": "client-questionnaire",
+  "#/success": "client-success",
+  "#/admin/login": "admin-login",
+  "#/admin/dashboard": "admin-dashboard"
+};
+
+const VIEW_TO_HASH = {
+  "client-login": "#/login",
+  "client-select": "#/select",
+  "client-questionnaire": "#/questionnaire",
+  "client-success": "#/success",
+  "admin-login": "#/admin/login",
+  "admin-dashboard": "#/admin/dashboard"
+};
+
+// URL 해시를 변경하여 라우팅 유도
 function showView(viewId) {
+  const hash = VIEW_TO_HASH[viewId] || "#/login";
+  if (window.location.hash !== hash) {
+    window.location.hash = hash;
+  } else {
+    handleRouting();
+  }
+}
+
+// 실제 DOM 전환 및 데이터 갱신 처리
+function renderView(viewId) {
   const views = [
     DOM.clientLoginView,
     DOM.clientSelectView,
@@ -593,6 +623,35 @@ function showView(viewId) {
     DOM.adminPortalView.classList.remove("hidden");
     refreshAdminDashboard();
   }
+}
+
+// 해시 변경 감지 및 인가 가드(Guard) 처리
+function handleRouting() {
+  if (!window.location.hash) {
+    window.location.hash = "#/login";
+    return;
+  }
+
+  const hash = window.location.hash;
+  const viewId = HASH_TO_VIEW[hash] || "client-login";
+
+  // 내담자 인증 가드
+  if (viewId === "client-select" || viewId === "client-questionnaire" || viewId === "client-success") {
+    if (!currentClient) {
+      window.location.hash = "#/login";
+      return;
+    }
+  }
+
+  // 관리자 인증 가드
+  if (viewId === "admin-dashboard") {
+    if (sessionStorage.getItem("crm_admin_logged") !== "true") {
+      window.location.hash = "#/admin/login";
+      return;
+    }
+  }
+
+  renderView(viewId);
 }
 
 // 토스트 안내 메시지
@@ -1824,7 +1883,9 @@ async function initApp() {
 
   registerEventListeners();
 
-  showView("client-login");
+  // URL 해시 변경 리스너 등록 및 초기 라우팅 감지 실행
+  window.addEventListener("hashchange", handleRouting);
+  handleRouting();
 }
 
 document.addEventListener("DOMContentLoaded", initApp);
