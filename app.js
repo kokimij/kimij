@@ -1,11 +1,122 @@
 // ============================================================================
 // 1. 초기 더미 데이터 및 로컬 스토리지 초기화
 // ============================================================================
-const DEFAULT_QUESTIONS = [
-  { type: "text", title: "최근 가장 고민되는 일은 무엇인가요?" },
-  { type: "text", title: "상담을 통해 구체적으로 어떤 도움을 받고 싶으신가요?" },
-  { type: "scale", title: "현재 일상 생활의 스트레스 정도를 선택해주세요." },
-  { type: "choice", title: "이전에 심리 상담을 받아본 경험이 있으신가요?", options: ["예", "아니오"] }
+// ============================================================================
+// 1. 초기 더미 데이터 및 로컬 스토리지 초기화
+// ============================================================================
+const PERSONAL_QUESTIONS = [
+  { type: "text", title: "최근 귀하를 가장 힘들게 만드는 주된 원인은 무엇인가요?" },
+  { type: "choice", title: "현재 본인이 겪고 있는 감정적 어려움을 선택해 주세요.", options: ["감정 기복", "무기력감", "분노 조절의 어려움", "자존감 저하", "대인관계 기피"] },
+  { type: "scale", title: "일상생활에서 스스로를 긍정적으로 평가하는 자존감 점수는 몇 점인가요?" },
+  { type: "text", title: "대인관계(친구, 동료 등)에서 주로 어떤 갈등이나 대화의 어려움이 발생하나요?" },
+  { type: "choice", title: "감정적 어려움이 발생할 때 주로 사용하는 해소 방법은 무엇인가요?", options: ["참거나 무시함", "지인에게 털어놓음", "폭식/음주", "취미나 수면", "전문가 상담"] },
+  { type: "scale", title: "평소 타인의 비판이나 평가에 얼마나 민감하게 반응하시나요?" },
+  { type: "text", title: "자신의 성격 중 가장 변화시키고 싶거나 개선하고 싶은 부분이 있다면 적어주세요." },
+  { type: "choice", title: "일주일 중 감정적으로 가장 안정감을 느끼는 순간은 언제인가요?", options: ["혼자 있을 때", "가족/친구와 소통할 때", "일에 몰두할 때", "휴식/취미 활동 중", "거의 느끼지 못함"] },
+  { type: "scale", title: "본인의 일상적인 수면 상태 및 수면의 질은 어떠한가요?" },
+  { type: "text", title: "최근 3개월간 귀하의 성격이나 태도가 급격히 변했다고 느낀 사건이 있다면 서술해 주세요." },
+  { type: "choice", title: "주로 어떤 대상에게 속마음을 솔직하게 털어놓으시나요?", options: ["아무에게도 털어놓지 않음", "가족", "가까운 친구", "직장 동료", "배우자/연인"] },
+  { type: "scale", title: "다른 사람과 가까운 관계를 맺을 때 거절당할 것에 대한 두려움의 정도는 어느 정도인가요?" },
+  { type: "text", title: "스스로가 생각하는 본인의 가장 큰 심리적 강점은 무엇인가요?" },
+  { type: "choice", title: "자신의 삶에 대한 통제감(스스로 결정하고 이끌어간다는 느낌)은 어느 정도인가요?", options: ["매우 높음", "대체로 높음", "보통", "낮음", "거의 없음"] },
+  { type: "scale", title: "최근 일상에서 외로움이나 소외감을 느끼는 정도는 어느 정도인가요?" },
+  { type: "text", title: "상담을 통해 해결하고 싶은 가장 즉각적이고 중요한 목표는 무엇인가요?" },
+  { type: "choice", title: "본인의 전반적인 에너지 수준(활력)을 평가한다면?", options: ["에너지가 넘침", "평범함", "쉽게 지침", "항상 방전된 느낌"] },
+  { type: "scale", title: "과거에 겪었던 부정적인 경험이나 상처(트라우마)가 현재 삶에 미치는 영향은 어느 정도인가요?" },
+  { type: "text", title: "만약 미래에 원하는 모습이 된다면, 당신의 삶은 어떻게 변화해 있을까요?" },
+  { type: "choice", title: "이전에 상담이나 정신과 치료를 받아본 적이 있다면, 그때의 만족도는 어떠셨나요?", options: ["매우 만족", "다소 만족", "보통/효과 없음", "오히려 부정적 영향", "치료 경험 없음"] }
+];
+
+const FAMILY_QUESTIONS = [
+  { type: "text", title: "배우자 혹은 가족 구성원과 갈등이 생겼을 때, 주로 드러나는 대화 방식은 어떠한가요?" },
+  { type: "choice", title: "배우자/가족과 대화할 때 느끼는 가장 큰 장벽은 무엇인가요?", options: ["대화 자체의 거부", "감정적인 폭언/비난", "내 말을 오해하거나 왜곡함", "서로 공감하지 못함", "주제 회피"] },
+  { type: "scale", title: "현재 배우자 혹은 가족 구성원에 대한 신뢰와 친밀감 점수는 몇 점인가요?" },
+  { type: "text", title: "갈등의 근본적인 원인이 되는 오랜 반복적인 주제(예: 경제적 문제, 시댁/처가 갈등 등)는 무엇인가요?" },
+  { type: "choice", title: "갈등이 고조될 때 귀하가 주로 취하는 행동 방식은 무엇인가요?", options: ["자리를 피하거나 침묵", "소리를 지르거나 화를 냄", "성급하게 사과하고 타협", "이성적으로 설득 시도", "제3자에게 하소연"] },
+  { type: "scale", title: "가족 내에서 귀하의 역할이나 헌신이 충분히 인정받고 있다고 느끼시나요?" },
+  { type: "text", title: "자녀가 있다면 자녀 양육관이나 훈육 방식의 차이로 인해 겪는 구체적인 의견 대립을 적어주세요." },
+  { type: "choice", title: "가족과 함께 보내는 주말이나 여가 시간의 만족도는 어떠한가요?", options: ["매우 만족스럽고 즐거움", "서로 할 일만 하며 보냄", "대체로 어색하거나 긴장됨", "함께 보내는 시간이 거의 없음"] },
+  { type: "scale", title: "배우자 혹은 가족과 함께할 때 느껴지는 가사/재정적 분담의 불공평함의 정도는 어느 정도인가요?" },
+  { type: "text", title: "배우자나 가족에게 가장 듣고 싶은 따뜻한 한마디나 위로의 말이 있다면 무엇인가요?" },
+  { type: "choice", title: "서로의 애정을 표현하는 가장 주된 방식은 무엇인가요?", options: ["선물이나 물질적 지원", "언어적 칭찬과 공감", "포옹이나 스킨십", "가사/육아 돕기", "애정 표현이 아예 없음"] },
+  { type: "scale", title: "가족 간의 갈등 상황에서 자녀가 받는 정서적 스트레스나 부정적 영향은 어느 정도라고 보시나요?" },
+  { type: "text", title: "결혼 생활이나 가족 관계에서 '이 선만큼은 지켜줬으면 좋겠다'고 생각하는 선(한계선)은 무엇인가요?" },
+  { type: "choice", title: "과거 외도나 큰 약속 위반 등 관계를 근본적으로 뒤흔든 사건이 존재하나요?", options: ["있으며 아직 상처로 남아있음", "있었으나 서로 용서하고 극복함", "없음"] },
+  { type: "scale", title: "배우자 또는 가족과의 성적 친밀감이나 스킨십에 대한 만족도는 어느 정도인가요?" },
+  { type: "text", title: "가족들과 함께 살면서 가장 크게 외로움을 느끼거나 소외감을 받는 순간은 언제인가요?" },
+  { type: "choice", title: "본인의 원가족(부모님, 형제자매)과의 관계가 현재 결혼 생활이나 가족 관계에 미치는 영향은 어떠한가요?", options: ["지대한 긍정적 영향", "간섭이나 상처 등 부정적 영향", "거의 영향이 없음"] },
+  { type: "scale", title: "현재 가정을 유지하고자 하는 배우자 혹은 가족 구성원들의 의지와 노력의 정도는 어떠한가요?" },
+  { type: "text", title: "상담을 마친 후 우리 부부/가족이 도달해 있기를 바라는 구체적인 약속이나 관계의 모습은 무엇인가요?" },
+  { type: "choice", title: "상담에 참여하게 된 주된 계기는 무엇인가요?", options: ["본인이 적극적으로 제안함", "배우자나 가족의 강요로 참여", "전문가의 권유", "가정 위기를 극복하려는 최후의 수단"] }
+];
+
+const DEPRESSION_QUESTIONS = [
+  { type: "text", title: "최근 우울감이나 극심한 불안을 강하게 느끼기 시작한 구체적인 시기와 계기가 있나요?" },
+  { type: "choice", title: "우울하거나 불안할 때 머릿속에 가장 자주 떠오르는 부정적인 생각은 무엇인가요?", options: ["나 자신이 쓸모없게 느껴짐", "미래에 나쁜 일이 생길 것 같음", "주변 사람들이 나를 싫어할 것 같음", "과거의 실수가 계속 후회됨", "아무 생각이 나지 않고 멍해짐"] },
+  { type: "scale", title: "최근 2주일 동안 거의 매일 우울하거나 슬프다고 느낀 주관적인 빈도는 몇 점인가요?" },
+  { type: "text", title: "가슴 답답함, 식은땀, 호흡 곤란 등 불안으로 인해 나타나는 신체적 반응을 서술해 주세요." },
+  { type: "choice", title: "불안감이 엄습할 때 이를 다스리기 위해 시도하는 본인만의 대처 행동은 무엇인가요?", options: ["심호흡이나 가벼운 산책", "다른 생각을 하려 노력함", "스마트폰이나 미디어 시청", "폭식이나 흡연/음주", "그저 견뎌내거나 방치함"] },
+  { type: "scale", title: "예상치 못한 상황에서 찾아오는 갑작스러운 공포감이나 공황 발작 증상의 빈도는 어느 정도인가요?" },
+  { type: "text", title: "스스로를 비난하거나 상황을 파국적으로 해석하는 인지적 습관(예: '나는 무조건 실패할 거야')이 있다면 적어주세요." },
+  { type: "choice", title: "현재 복용 중인 정신건강의학과 약물이나 치료 이력이 있으신가요?", options: ["현재 항우울제/항불안제 복용 중", "과거에 치료 경험이 있으나 현재는 중단함", "치료 이력이 전혀 없음"] },
+  { type: "scale", title: "아침에 눈을 떴을 때 느껴지는 우울감이나 무력함의 수준은 어느 정도인가요?" },
+  { type: "text", title: "불안이나 우울감이 일상적인 사회 활동(출근, 학업, 외출 등)을 마비시키는 구체적인 순간은 언제인가요?" },
+  { type: "choice", title: "불안감이 주로 유발되는 환경이나 자극은 무엇인가요?", options: ["많은 사람들 앞에 서거나 발표할 때", "중요한 시험이나 평가를 앞두고", "어두운 밤이나 혼자 있을 때", "특별한 이유 없이 수시로 발생", "미래에 대한 불확실한 걱정 때문"] },
+  { type: "scale", title: "나쁜 일(사고, 실패 등)이 반드시 일어날 것이라는 생각에 사로잡혀 안전을 과도하게 확인하는 정도는 어떠한가요?" },
+  { type: "text", title: "우울감과 불안감을 잊게 만들거나 나를 미소 짓게 만드는 유일한 안전지대나 활동이 있다면 무엇인가요?" },
+  { type: "choice", title: "감정이 극도로 나빠졌을 때 자해나 극단적인 선택에 대한 생각이 떠오른 적이 있습니까?", options: ["전혀 없음", "가끔 생각만 나지만 실행 의지는 없음", "구체적인 충동을 느껴본 적이 있음"] },
+  { type: "scale", title: "주변 사람들(가족, 친구)이 나의 힘든 감정을 진심으로 이해하고 지지해 준다고 느끼는 정도는 어떠한가요?" },
+  { type: "text", title: "최근 겪었던 무력감으로 인해 포기하게 된 취미 활동이나 일상적 과업이 있다면 무엇인가요?" },
+  { type: "choice", title: "우울증이나 불안 장애로 인해 집중력이나 기억력이 예전보다 크게 저하되었다고 느끼시나요?", options: ["예, 현저하게 지장이 있음", "조금 그런 편이지만 정상 생활 가능", "아니오, 전혀 문제없음"] },
+  { type: "scale", title: "감정 조절이 되지 않아 갑작스럽게 눈물이 흐르거나 분노가 폭발하는 빈도는 어느 정도인가요?" },
+  { type: "text", title: "안전하고 편안한 마음의 회복을 위해 상담사에게 가장 기대하는 정서적 지지나 상담 방식은 무엇인가요?" },
+  { type: "choice", title: "우울/불안 관리를 시작하면서 본인이 스스로 다짐한 목표가 있다면 무엇인가요?", options: ["일상 기능을 정상적으로 회복하기", "감정을 편안하게 통제하기", "부정적 생각의 고리 끊어내기", "불면증에서 벗어나기", "타인과 편안하게 소통하기"] }
+];
+
+const STRESS_QUESTIONS = [
+  { type: "text", title: "현재 귀하에게 극심한 스트레스를 주고 있는 주된 환경(직장, 학업, 가사 등)과 요인을 서술해 주세요." },
+  { type: "choice", title: "스트레스로 인해 겪고 있는 가장 두드러지는 신체적 증상은 무엇인가요?", options: ["만성 피로/두통", "소화 불량/식욕 변화", "수면 장애/불면증", "심장 두근거림/호흡 곤란", "증상 없음"] },
+  { type: "scale", title: "최근 일상에서 에너지가 바닥나 아무것도 할 수 없다고 느끼는 번아웃의 정도는 몇 점인가요?" },
+  { type: "text", title: "일과 사생활의 분리(워라밸)가 잘 이루어지지 않는 구체적인 이유나 장애물은 무엇인가요?" },
+  { type: "choice", title: "최근 업무나 공부를 시작할 때 느끼는 감정에 가장 가까운 것은 무엇인가요?", options: ["심한 압박감과 두려움", "지루함과 의욕 상실", "무의미함과 회의감", "적절한 책임감과 성취감"] },
+  { type: "scale", title: "현재 귀하가 담당하고 있는 책임이나 업무량의 과도함 수준은 어느 정도인가요?" },
+  { type: "text", title: "번아웃 증상을 겪기 시작한 대략적인 시점과 그 시점의 결정적인 계기는 무엇이었나요?" },
+  { type: "choice", title: "평소 스트레스를 받았을 때 주변 동료나 친구에게 도움을 요청하는 편인가요?", options: ["자주 도움을 요청하고 조언을 구함", "힘들다고 털어놓기만 함", "혼자 해결하며 티내지 않음", "주변의 도움을 거부함"] },
+  { type: "scale", title: "내가 하는 일이나 노력이 정당한 평가와 보상(금전적/정서적)을 받고 있다고 생각하시나요?" },
+  { type: "text", title: "온전한 휴식을 취하지 못하게 방해하는 내적인 압박감이나 완벽주의적 성향이 있다면 적어주세요." },
+  { type: "choice", title: "퇴근 후 혹은 주말에 업무 연락을 받았을 때의 대처 방식은 무엇인가요?", options: ["즉시 답장하고 업무를 처리함", "불안해하며 확인만 함", "외면하다가 나중에 몰아서 처리", "근무 시간 외 연락은 무시"] },
+  { type: "scale", title: "내 업무나 삶에 대한 결정권(자율성)을 내가 쥐고 있다고 느끼는 정도는 어느 정도인가요?" },
+  { type: "text", title: "과거 스트레스를 가장 건강하고 효과적으로 극복해 냈던 귀하만의 성공적인 경험은 무엇인가요?" },
+  { type: "choice", title: "현재 본인의 스트레스 해소 활동(취미, 운동 등)의 빈도는 어떠한가요?", options: ["거의 매일 꾸준히 함", "일주일에 1~2회", "한 달에 1~2회", "바빠서 전혀 하지 못함"] },
+  { type: "scale", title: "내일 아침 출근이나 업무를 시작하는 것에 대해 느껴지는 심리적 거부감의 정도는 어느 정도인가요?" },
+  { type: "text", title: "직장 내 대인관계(상사, 부하직원, 클라이언트 등)로 인해 발생하는 구체적인 스트레스 상황을 적어주세요." },
+  { type: "choice", title: "나의 가치관과 현재 하고 있는 일의 방향성이 일치한다고 느끼시나요?", options: ["완벽히 일치하여 보람을 느낌", "대체로 일치함", "돈을 벌기 위해 억지로 맞춤", "전혀 맞지 않아 회의감이 듦"] },
+  { type: "scale", title: "만성적인 피로로 인해 일상적인 가사일이나 대인관계를 소홀히 하게 되는 빈도는 어느 정도인가요?" },
+  { type: "text", title: "스트레스와 지친 마음을 회복하기 위해 상담사에게 바라는 구체적인 솔루션이나 기대사항을 적어주세요." },
+  { type: "choice", title: "만약 1주일간 아무 조건 없이 온전한 휴가가 주어진다면, 가장 하고 싶은 활동은 무엇인가요?", options: ["아무것도 안 하고 하루 종일 누워 있기", "자연 속으로 여행 떠나기", "취미 생활 몰두하기", "지인들과 술자리/친목", "밀린 잠 몰아서 자기"] }
+];
+
+const CAREER_QUESTIONS = [
+  { type: "text", title: "내가 미래에 가장 해보고 싶거나 흥미를 느끼는 분야/직업은 무엇이며, 그 이유는 무엇인가요?" },
+  { type: "choice", title: "진로를 결정할 때 가장 방해가 되는 요인은 무엇인가요?", options: ["내가 무엇을 좋아하는지 모름", "성적이 부족해서", "부모님과의 의견 대립", "미래 직업에 대한 정보 부족", "진로를 결정해야 한다는 과도한 압박감"] },
+  { type: "scale", title: "현재 스스로 생각하는 학업 성적 및 진로 결정에 대한 자아효능감 점수는 몇 점인가요?" },
+  { type: "text", title: "부모님이 나에게 기대하는 진로/직업과 내가 원하는 진로 사이에 차이가 있다면 적어주세요." },
+  { type: "choice", title: "나의 재능과 강점을 찾기 위해 주로 참고하는 자료나 평소의 활동은 무엇인가요?", options: ["진로 적성 검사 결과", "학교 동아리나 취미 활동", "유튜브나 인터넷 검색", "부모님이나 선생님과의 상담", "아직 적극적으로 찾지 못함"] },
+  { type: "scale", title: "학업 및 성적에 대한 스트레스로 인해 일상생활이나 감정에 지장을 느끼는 정도는 어느 정도인가요?" },
+  { type: "text", title: "평소 공부를 하거나 진로 계획을 세울 때 나를 가장 지치고 무기력하게 만드는 생각은 무엇인가요?" },
+  { type: "choice", title: "미래의 직업을 선택할 때 내가 가장 중요하게 생각하는 가치는 무엇인가요?", options: ["높은 소득과 재정적 안정", "나의 흥미와 자아실현", "사회적 명예와 인정", "여유로운 삶과 워라밸", "다른 사람을 돕는 가치"] },
+  { type: "scale", title: "현재 내가 가고 싶은 고등학교/대학교 또는 학과에 대한 뚜렷한 목표가 설정되어 있는 정도는 어떠한가요?" },
+  { type: "text", title: "진로와 진학에 대해 혼자 고민하다가 문득 미래가 불안하고 막막해질 때 대처하는 방식을 적어주세요." },
+  { type: "choice", title: "평소 부모님과 나의 미래 및 진로에 대해 얼마나 편안하게 대화하는 편인가요?", options: ["매일 수시로 의견을 나누고 지지받음", "필요할 때만 사무적으로 대화함", "대화하면 매번 싸움으로 끝남", "진로 대화를 거의 나누지 않음"] },
+  { type: "scale", title: "내 미래의 방향을 스스로 결정할 수 있다는 자율성과 독립성에 대한 점수는 몇 점인가요?" },
+  { type: "text", title: "최근 학교생활에서 가장 큰 스트레스를 주는 상황(친구 관계, 교우 갈등, 선생님과의 관계 등)이 있다면 적어주세요." },
+  { type: "choice", title: "앞으로 어떤 형태의 구체적인 진로 체험 활동을 해보고 싶으신가요?", options: ["직무 현장 견학 및 인턴십", "대학 학과 탐방 및 멘토링", "다양한 분야의 직업인 인터뷰", "직접 무언가를 만들어보는 실습", "관심 분야의 자격증 공부"] },
+  { type: "scale", title: "진로에 대한 불안감으로 인해 밤에 잠을 자지 못하거나 집중력이 떨어지는 빈도는 어느 정도인가요?" },
+  { type: "text", title: "주변 친구들과 나의 성적, 진로 결정을 비교하며 자괴감이나 불안을 느꼈던 경험을 솔직하게 적어주세요." },
+  { type: "choice", title: "평소 여가 시간에 스마트폰이나 게임을 하는 주된 이유는 무엇인가요?", options: ["단순한 재미와 소통을 위해", "학업 스트레스를 회피하고 잊기 위해", "할 일이 없어 무의미하게 시간 때우기", "현실 세계의 불안감을 해소하기 위해", "거의 하지 않음"] },
+  { type: "scale", title: "나의 미래를 설계해 가는데 학교 진로 상담이나 진학 도우미가 실질적으로 도움이 된 정도는 어느 정도인가요?" },
+  { type: "text", title: "상담을 통해 어떤 구체적인 진로 로드맵이나 직업적 탐색을 얻어가고 싶은지 서술해 주세요." },
+  { type: "choice", title: "상담이 끝난 후 본인이 가장 기대하는 나의 변화는 무엇인가요?", options: ["나의 적성과 강점을 명확히 알게 됨", "진로 불안감이 해소되고 공부할 동기가 생김", "부모님과 진로 갈등이 완화됨", "성적 스트레스를 조절하는 법을 배움", "현실적인 진로 계획을 세우게 됨"] }
 ];
 
 const DEFAULT_COUNSELING_TYPES = [
@@ -14,35 +125,35 @@ const DEFAULT_COUNSELING_TYPES = [
     title: "개인 심리 상담", 
     description: "우울, 불안, 대인관계 등 개인적인 심리적 어려움을 해결하는 1:1 맞춤형 마음 치유 솔루션", 
     isActive: true,
-    questions: DEFAULT_QUESTIONS
+    questions: PERSONAL_QUESTIONS
   },
   { 
     id: "c2", 
     title: "부부/가족 상담", 
     description: "부부 갈등, 자녀 양육, 가족 내 소통 문제 해결을 돕는 관계 회복 프로그램", 
     isActive: true,
-    questions: DEFAULT_QUESTIONS
+    questions: FAMILY_QUESTIONS
   },
   { 
     id: "c3", 
     title: "우울/불안 관리", 
     description: "일상생활에 지장을 주는 지속적인 우울감과 과도한 불안을 조절하는 심리 안정 프로그램", 
     isActive: true,
-    questions: DEFAULT_QUESTIONS
+    questions: DEPRESSION_QUESTIONS
   },
   { 
     id: "c4", 
     title: "스트레스/번아웃", 
     description: "직장, 학업 등으로 인한 극심한 스트레스와 무기력을 회복하는 리프레시 상담", 
     isActive: true,
-    questions: DEFAULT_QUESTIONS
+    questions: STRESS_QUESTIONS
   },
   { 
     id: "c5", 
     title: "청소년 진로 상담", 
     description: "학업 스트레스, 진로 탐색, 청소년기 정서 및 성격 발달을 돕는 코칭", 
     isActive: true,
-    questions: DEFAULT_QUESTIONS
+    questions: CAREER_QUESTIONS
   }
 ];
 
@@ -870,22 +981,25 @@ function initClientQuestionnaire() {
       let inputHtml = "";
       if (q.type === "text") {
         inputHtml = `
-          <div class="ml-[28px] relative group/input">
-            <input class="w-full bg-surface-container-low text-on-surface font-body-md p-md rounded-xl border border-outline-variant/30 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-300 placeholder:text-on-surface-variant/50" placeholder="내용을 기입해 주세요..." type="text" required>
+          <div class="ml-[28px] relative group/textarea">
+            <textarea class="w-full bg-surface-container-low text-on-surface font-body-md p-sm px-md rounded-xl border border-outline-variant/30 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-300 placeholder:text-on-surface-variant/50 resize-none overflow-hidden min-h-[44px]" placeholder="내용을 기입해 주세요..." rows="1" oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'" required></textarea>
           </div>
         `;
       } else if (q.type === "choice") {
         const optionsHtml = (q.options || []).map((opt, oIdx) => `
-          <label class="flex-1 cursor-pointer">
+          <label class="cursor-pointer w-full flex items-center gap-md py-sm px-md rounded-2xl border border-outline-variant/30 bg-surface-container-lowest hover:bg-surface-container-low transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/5">
             <input class="peer sr-only" name="custom_q_${idx}" type="radio" value="${opt}" required>
-            <div class="flex items-center justify-center p-md rounded-xl border border-outline-variant/40 bg-surface-container-lowest hover:bg-surface-container-low transition-all peer-checked:border-primary peer-checked:bg-primary/5 peer-checked:text-primary text-on-surface-variant">
-              <span class="font-headline-sm text-headline-sm">${opt}</span>
+            <div class="w-6 h-6 rounded-full border border-outline-variant/60 bg-white flex items-center justify-center text-label-sm font-semibold transition-all peer-checked:bg-primary peer-checked:text-on-primary peer-checked:border-primary">
+              ${oIdx + 1}
             </div>
+            <span class="font-normal text-[15px] leading-normal text-on-surface-variant peer-checked:text-primary peer-checked:font-medium">
+              ${opt}
+            </span>
           </label>
         `).join("");
 
         inputHtml = `
-          <div class="ml-[28px] mt-sm flex flex-col md:flex-row gap-md">
+          <div class="ml-[28px] mt-sm flex flex-col gap-sm">
             ${optionsHtml}
           </div>
         `;
@@ -912,8 +1026,8 @@ function initClientQuestionnaire() {
       }
 
       qBlock.innerHTML = `
-        <label class="font-headline-md text-headline-md text-on-surface flex items-start gap-sm">
-          <span class="text-primary font-headline-md">${idx + 1}.</span>
+        <label class="font-bold text-[18px] text-on-surface flex items-start gap-sm leading-relaxed">
+          <span class="text-primary font-bold text-[18px]">${idx + 1}.</span>
           ${q.title}
         </label>
         ${inputHtml}
@@ -925,32 +1039,32 @@ function initClientQuestionnaire() {
     DOM.dynamicQuestionsContainer.innerHTML = `
       <!-- Q1: Short Answer -->
       <div class="flex flex-col gap-sm question-block" data-type="text" data-title="최근 가장 고민되는 일은 무엇인가요?">
-        <label class="font-headline-md text-headline-md text-on-surface flex items-start gap-sm">
-          <span class="text-primary font-headline-md">1.</span>
+        <label class="font-bold text-[18px] text-on-surface flex items-start gap-sm leading-relaxed">
+          <span class="text-primary font-bold text-[18px]">1.</span>
           최근 가장 고민되는 일은 무엇인가요?
         </label>
         <p class="font-body-sm text-body-sm text-on-surface-variant ml-[28px] mb-xs">간단한 키워드나 문장으로 작성해 주셔도 좋습니다.</p>
-        <div class="ml-[28px] relative group/input">
-          <input class="w-full bg-surface-container-low text-on-surface font-body-md p-md rounded-xl border border-outline-variant/30 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-300 placeholder:text-on-surface-variant/50" placeholder="예: 직장 내 대인관계, 수면 문제 등" type="text" required>
+        <div class="ml-[28px] relative group/textarea">
+          <textarea class="w-full bg-surface-container-low text-on-surface font-body-md p-sm px-md rounded-xl border border-outline-variant/30 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-300 placeholder:text-on-surface-variant/50 resize-none overflow-hidden min-h-[44px]" placeholder="예: 직장 내 대인관계, 수면 문제 등" rows="1" oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'" required></textarea>
         </div>
       </div>
 
       <!-- Q2: Long Answer -->
       <div class="flex flex-col gap-sm question-block" data-type="text" data-title="상담을 통해 구체적으로 어떤 도움을 받고 싶으신가요?">
-        <label class="font-headline-md text-headline-md text-on-surface flex items-start gap-sm">
-          <span class="text-primary font-headline-md">2.</span>
+        <label class="font-bold text-[18px] text-on-surface flex items-start gap-sm leading-relaxed">
+          <span class="text-primary font-bold text-[18px]">2.</span>
           상담을 통해 구체적으로 어떤 도움을 받고 싶으신가요?
         </label>
         <p class="font-body-sm text-body-sm text-on-surface-variant ml-[28px] mb-xs">기대하시는 변화나 목표가 있다면 자유롭게 적어주세요.</p>
         <div class="ml-[28px] relative group/textarea">
-          <textarea class="w-full bg-surface-container-low text-on-surface font-body-md p-md rounded-xl border border-outline-variant/30 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-300 placeholder:text-on-surface-variant/50 resize-none" placeholder="자유롭게 작성해주세요..." rows="4" required></textarea>
+          <textarea class="w-full bg-surface-container-low text-on-surface font-body-md p-sm px-md rounded-xl border border-outline-variant/30 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-300 placeholder:text-on-surface-variant/50 resize-none overflow-hidden min-h-[44px]" placeholder="자유롭게 작성해주세요..." rows="1" oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'" required></textarea>
         </div>
       </div>
 
       <!-- Q3: Scale -->
       <div class="flex flex-col gap-sm question-block" data-type="scale" data-title="현재 일상 생활의 스트레스 정도를 선택해주세요.">
-        <label class="font-headline-md text-headline-md text-on-surface flex items-start gap-sm">
-          <span class="text-primary font-headline-md">3.</span>
+        <label class="font-bold text-[18px] text-on-surface flex items-start gap-sm leading-relaxed">
+          <span class="text-primary font-bold text-[18px]">3.</span>
           현재 일상 생활의 스트레스 정도를 선택해주세요.
         </label>
         <div class="ml-[28px] mt-md">
@@ -974,22 +1088,28 @@ function initClientQuestionnaire() {
 
       <!-- Q4: Prior Experience -->
       <div class="flex flex-col gap-sm question-block" data-type="choice" data-title="이전에 심리 상담을 받아본 경험이 있으신가요?">
-        <label class="font-headline-md text-headline-md text-on-surface flex items-start gap-sm">
-          <span class="text-primary font-headline-md">4.</span>
+        <label class="font-bold text-[18px] text-on-surface flex items-start gap-sm leading-relaxed">
+          <span class="text-primary font-bold text-[18px]">4.</span>
           이전에 심리 상담을 받아본 경험이 있으신가요?
         </label>
-        <div class="ml-[28px] mt-sm flex gap-md">
-          <label class="flex-1 cursor-pointer">
+        <div class="ml-[28px] mt-sm flex flex-col gap-sm">
+          <label class="cursor-pointer w-full flex items-center gap-md py-sm px-md rounded-2xl border border-outline-variant/30 bg-surface-container-lowest hover:bg-surface-container-low transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/5">
             <input class="peer sr-only" name="prior_exp" type="radio" value="예" required>
-            <div class="flex items-center justify-center p-md rounded-xl border border-outline-variant/40 bg-surface-container-lowest hover:bg-surface-container-low transition-all peer-checked:border-primary peer-checked:bg-primary/5 peer-checked:text-primary text-on-surface-variant">
-              <span class="font-headline-sm text-headline-sm">예</span>
+            <div class="w-6 h-6 rounded-full border border-outline-variant/60 bg-white flex items-center justify-center text-label-sm font-semibold transition-all peer-checked:bg-primary peer-checked:text-on-primary peer-checked:border-primary">
+              1
             </div>
+            <span class="font-normal text-[15px] leading-normal text-on-surface-variant peer-checked:text-primary peer-checked:font-medium">
+              예
+            </span>
           </label>
-          <label class="flex-1 cursor-pointer">
+          <label class="cursor-pointer w-full flex items-center gap-md py-sm px-md rounded-2xl border border-outline-variant/30 bg-surface-container-lowest hover:bg-surface-container-low transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/5">
             <input class="peer sr-only" name="prior_exp" type="radio" value="아니오" required>
-            <div class="flex items-center justify-center p-md rounded-xl border border-outline-variant/40 bg-surface-container-lowest hover:bg-surface-container-low transition-all peer-checked:border-primary peer-checked:bg-primary/5 peer-checked:text-primary text-on-surface-variant">
-              <span class="font-headline-sm text-headline-sm">아니오</span>
+            <div class="w-6 h-6 rounded-full border border-outline-variant/60 bg-white flex items-center justify-center text-label-sm font-semibold transition-all peer-checked:bg-primary peer-checked:text-on-primary peer-checked:border-primary">
+              2
             </div>
+            <span class="font-normal text-[15px] leading-normal text-on-surface-variant peer-checked:text-primary peer-checked:font-medium">
+              아니오
+            </span>
           </label>
         </div>
       </div>
@@ -1500,6 +1620,7 @@ async function openClientDrawer(client) {
 async function renderClientHistoryTimeline(clientId) {
   const records = await dbGetRecords();
   const clientRecords = records.filter(r => r.clientId === clientId);
+  const counselingTypes = await dbGetCounselingTypes();
 
   DOM.drawerHistoryList.innerHTML = "";
 
@@ -1518,12 +1639,38 @@ async function renderClientHistoryTimeline(clientId) {
     // 답변 출력 블록 구성
     let answersHtml = "";
     if (rec.answers && rec.answers.length > 0) {
-      const qLines = rec.answers.map(ans => `
-        <div class="text-xs bg-surface-container-lowest p-sm rounded border border-outline-variant/20 mb-xs">
-          <div class="font-semibold text-primary">Q. ${ans.question}</div>
-          <div class="text-on-surface mt-xs pl-xs border-l-2 border-primary/20">${ans.answer || "(미답변)"}</div>
-        </div>
-      `).join("");
+      const qLines = rec.answers.map(ans => {
+        let displayAnswer = ans.answer || "(미답변)";
+
+        // counselingTypeId와 매칭하여 질문의 보기(options) 텍스트 조회
+        const cType = counselingTypes.find(t => t.id === rec.counselingTypeId);
+        if (cType && cType.questions) {
+          const matchedQ = cType.questions.find(q => q.title === ans.question);
+          if (matchedQ && matchedQ.type === "choice" && matchedQ.options) {
+            // Case A: 답변이 단일 숫자(예: "1", "2")인 경우 매핑 진행
+            if (/^[1-9]\d*$/.test(displayAnswer)) {
+              const optIdx = parseInt(displayAnswer) - 1;
+              if (matchedQ.options[optIdx]) {
+                displayAnswer = `${displayAnswer}. ${matchedQ.options[optIdx]}`;
+              }
+            } else {
+              // Case B: 답변이 이미 텍스트로 저장되어 있는 경우, 보기 리스트에서의 번호를 찾아서 접두사 결합
+              const optIdx = matchedQ.options.indexOf(displayAnswer);
+              if (optIdx !== -1) {
+                displayAnswer = `${optIdx + 1}. ${displayAnswer}`;
+              }
+            }
+          }
+        }
+
+        return `
+          <div class="text-xs bg-surface-container-lowest p-sm rounded border border-outline-variant/20 mb-xs">
+            <div class="font-semibold text-primary">Q. ${ans.question}</div>
+            <div class="text-on-surface mt-xs pl-xs border-l-2 border-primary/20">${displayAnswer}</div>
+          </div>
+        `;
+      }).join("");
+
       answersHtml = `
         <div class="mt-md pt-md border-t border-surface-container-high/60">
           <div class="text-[13px] font-bold text-on-surface mb-sm flex items-center gap-xs">
@@ -1647,12 +1794,14 @@ function registerEventListeners() {
 
 
   // 처음 화면으로 (로그아웃)
-  DOM.btnClientLogout.addEventListener("click", () => {
-    currentClient = null;
-    selectedCounselingType = null;
-    currentRecordId = null;
-    showView("client-login");
-  });
+  if (DOM.btnClientLogout) {
+    DOM.btnClientLogout.addEventListener("click", () => {
+      currentClient = null;
+      selectedCounselingType = null;
+      currentRecordId = null;
+      showView("client-login");
+    });
+  }
 
   DOM.btnSuccessHome.addEventListener("click", () => {
     if (countdownTimer) clearInterval(countdownTimer);

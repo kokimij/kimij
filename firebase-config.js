@@ -34,3 +34,10 @@ if (
 } else {
   console.log("⚠️ Firebase 설정이 입력되지 않아 로컬 테스트 모드(LocalStorage)로 작동합니다.");
 }
+
+// 개발자용 강제 로컬 스토리지 모드 URL 파라미터 기능 (?local)
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.has("local") || urlParams.get("mode") === "local") {
+  window.isFirebaseMode = false;
+  console.log("🔌 Developer Override: URL 쿼리 파라미터에 의해 강제로 LocalStorage 모드로 작동합니다.");
+}
