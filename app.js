@@ -1,38 +1,49 @@
 // ============================================================================
 // 1. 초기 더미 데이터 및 로컬 스토리지 초기화
 // ============================================================================
+const DEFAULT_QUESTIONS = [
+  { type: "text", title: "최근 가장 고민되는 일은 무엇인가요?" },
+  { type: "text", title: "상담을 통해 구체적으로 어떤 도움을 받고 싶으신가요?" },
+  { type: "scale", title: "현재 일상 생활의 스트레스 정도를 선택해주세요." },
+  { type: "choice", title: "이전에 심리 상담을 받아본 경험이 있으신가요?", options: ["예", "아니오"] }
+];
+
 const DEFAULT_COUNSELING_TYPES = [
   { 
     id: "c1", 
     title: "개인 심리 상담", 
     description: "우울, 불안, 대인관계 등 개인적인 심리적 어려움을 해결하는 1:1 맞춤형 마음 치유 솔루션", 
     isActive: true,
-    questions: [
-      { type: "text", title: "최근 가장 고민되는 일은 무엇인가요?" },
-      { type: "text", title: "상담을 통해 구체적으로 어떤 도움을 받고 싶으신가요?" }
-    ]
+    questions: DEFAULT_QUESTIONS
   },
   { 
     id: "c2", 
     title: "부부/가족 상담", 
     description: "부부 갈등, 자녀 양육, 가족 내 소통 문제 해결을 돕는 관계 회복 프로그램", 
     isActive: true,
-    questions: [
-      { type: "text", title: "가족 혹은 배우자와의 주요 갈등 원인은 무엇이라고 생각하시나요?" },
-      { type: "choice", title: "이전에도 가족/부부 상담을 받은 경험이 있으신가요?", options: ["예", "아니오"] }
-    ]
+    questions: DEFAULT_QUESTIONS
   },
   { 
     id: "c3", 
     title: "우울/불안 관리", 
     description: "일상생활에 지장을 주는 지속적인 우울감과 과도한 불안을 조절하는 심리 안정 프로그램", 
     isActive: true,
-    questions: [
-      { type: "text", title: "우울하거나 불안할 때 나타나는 주요 신체적/감정적 증상은 무엇인가요?" }
-    ]
+    questions: DEFAULT_QUESTIONS
   },
-  { id: "c4", title: "스트레스/번아웃", description: "직장, 학업 등으로 인한 극심한 스트레스와 무기력을 회복하는 리프레시 상담", isActive: true },
-  { id: "c5", title: "청소년 진로 상담", description: "학업 스트레스, 진로 탐색, 청소년기 정서 및 성격 발달을 돕는 코칭", isActive: true }
+  { 
+    id: "c4", 
+    title: "스트레스/번아웃", 
+    description: "직장, 학업 등으로 인한 극심한 스트레스와 무기력을 회복하는 리프레시 상담", 
+    isActive: true,
+    questions: DEFAULT_QUESTIONS
+  },
+  { 
+    id: "c5", 
+    title: "청소년 진로 상담", 
+    description: "학업 스트레스, 진로 탐색, 청소년기 정서 및 성격 발달을 돕는 코칭", 
+    isActive: true,
+    questions: DEFAULT_QUESTIONS
+  }
 ];
 
 const DEFAULT_CLIENTS = [
@@ -72,9 +83,28 @@ const DEFAULT_RECORDS = [
 ];
 
 function initLocalStorage() {
-  if (!localStorage.getItem("crm_counseling_types")) {
+  let storedTypes = localStorage.getItem("crm_counseling_types");
+  if (!storedTypes) {
     localStorage.setItem("crm_counseling_types", JSON.stringify(DEFAULT_COUNSELING_TYPES));
+  } else {
+    try {
+      const types = JSON.parse(storedTypes);
+      const updated = types.map(t => {
+        const defaultType = DEFAULT_COUNSELING_TYPES.find(dt => dt.id === t.id);
+        if (defaultType) {
+          return {
+            ...t,
+            questions: defaultType.questions
+          };
+        }
+        return t;
+      });
+      localStorage.setItem("crm_counseling_types", JSON.stringify(updated));
+    } catch (e) {
+      localStorage.setItem("crm_counseling_types", JSON.stringify(DEFAULT_COUNSELING_TYPES));
+    }
   }
+
   if (!localStorage.getItem("crm_clients")) {
     localStorage.setItem("crm_clients", JSON.stringify(DEFAULT_CLIENTS));
   }
@@ -98,6 +128,17 @@ async function initFirebaseData() {
         });
       }
       console.log("🔥 Firebase: 기본 상담 종류 데이터를 초기화했습니다.");
+    } else {
+      // 기본 타입 (이름 매칭)의 질문 목록 동기화
+      for (const doc of typesSnap.docs) {
+        const data = doc.data();
+        const defaultType = DEFAULT_COUNSELING_TYPES.find(dt => dt.title === data.title);
+        if (defaultType) {
+          await window.db.collection("counselingTypes").doc(doc.id).update({
+            questions: defaultType.questions
+          });
+        }
+      }
     }
 
     const clientsSnap = await window.db.collection("clients").get();
@@ -184,6 +225,41 @@ async function dbAddClient(name, birthDate, phone) {
     });
     localStorage.setItem("crm_clients", JSON.stringify(clients));
     return newId;
+  }
+}
+
+async function dbUpdateClientInfo(clientId, phone, birthDate) {
+  if (window.isFirebaseMode) {
+    await window.db.collection("clients").doc(clientId).update({
+      phone: phone.trim(),
+      birthDate: birthDate.trim().replace(/-/g, "")
+    });
+  } else {
+    const clients = await dbGetClients();
+    const client = clients.find(c => c.id === clientId);
+    if (client) {
+      client.phone = phone.trim();
+      client.birthDate = birthDate.trim().replace(/-/g, "");
+      localStorage.setItem("crm_clients", JSON.stringify(clients));
+    }
+  }
+}
+
+async function dbDeleteClient(clientId) {
+  if (window.isFirebaseMode) {
+    await window.db.collection("clients").doc(clientId).delete();
+    const recordsSnap = await window.db.collection("counselingRecords").where("clientId", "==", clientId).get();
+    for (const doc of recordsSnap.docs) {
+      await doc.ref.delete();
+    }
+  } else {
+    const clients = await dbGetClients();
+    const filteredClients = clients.filter(c => c.id !== clientId);
+    localStorage.setItem("crm_clients", JSON.stringify(filteredClients));
+
+    const records = JSON.parse(localStorage.getItem("crm_records") || "[]");
+    const filteredRecords = records.filter(r => r.clientId !== clientId);
+    localStorage.setItem("crm_records", JSON.stringify(filteredRecords));
   }
 }
 
@@ -311,6 +387,23 @@ async function dbAddRecord(clientId, clientName, clientBirthDate, counselingType
   }
 }
 
+async function dbSubmitRecordAnswers(recordId, answers) {
+  if (window.isFirebaseMode) {
+    await window.db.collection("counselingRecords").doc(recordId).update({
+      answers: answers,
+      submittedAt: Date.now()
+    });
+  } else {
+    const records = await dbGetRecords();
+    const idx = records.findIndex(r => r.id === recordId);
+    if (idx !== -1) {
+      records[idx].answers = answers;
+      records[idx].submittedAt = Date.now();
+      localStorage.setItem("crm_records", JSON.stringify(records));
+    }
+  }
+}
+
 async function dbUpdateRecordStatus(recordId, newStatus) {
   if (window.isFirebaseMode) {
     await window.db.collection("counselingRecords").doc(recordId).update({ status: newStatus });
@@ -339,6 +432,8 @@ async function dbDeleteRecord(recordId) {
 // ============================================================================
 let currentClient = null;
 let selectedCounselingType = null;
+let currentRecordId = null;
+let currentDrawerClient = null;
 let activeTab = "clients";
 let countdownTimer = null;
 
@@ -445,7 +540,8 @@ const DOM = {
   drawerAvatar: document.getElementById("drawer-avatar"),
   drawerClientName: document.getElementById("drawer-client-name"),
   drawerClientBirth: document.getElementById("drawer-client-birth"),
-  drawerClientPhone: document.getElementById("drawer-client-phone"),
+  drawerInputPhone: document.getElementById("drawer-input-phone"),
+  drawerInputBirth: document.getElementById("drawer-input-birth"),
   drawerClientRegdate: document.getElementById("drawer-client-regdate"),
   formAssignCounseling: document.getElementById("form-assign-counseling"),
   assignCounselingSelect: document.getElementById("assign-counseling-select"),
@@ -567,7 +663,8 @@ DOM.registerBirth.addEventListener("input", (e) => {
 });
 
 // 손님 로그인
-async function handleClientLogin() {
+async function handleClientLogin(e) {
+  if (e) e.preventDefault();
   const name = DOM.loginName.value.trim();
   const birth = DOM.loginBirth.value.trim().replace(/-/g, "");
 
@@ -577,7 +674,7 @@ async function handleClientLogin() {
   }
 
   const clients = await dbGetClients();
-  const matchedClient = clients.find(c => c.name === name && c.birthDate === birth);
+  const matchedClient = clients.find(c => c.name === name && c.birthDate.replace(/-/g, "") === birth);
 
   if (matchedClient) {
     currentClient = matchedClient;
@@ -601,15 +698,42 @@ const iconMapping = {
   "청소년 진로 & 학습 상담": "school"
 };
 
-// 손님 상담 신청 카드 리스트 렌더링
+// 손님 상담 신청 카드 리스트 렌더링 (배정받은 상담만 필터링 노출)
 async function renderClientSelectCards() {
   DOM.counselingGrid.innerHTML = `<div class="col-span-3 text-center text-on-surface-variant/50 py-10">목록을 불러오는 중...</div>`;
-  const list = await dbGetCounselingTypes(true);
+  DOM.btnClientSubmit.disabled = true;
 
-  if (list.length === 0) {
-    DOM.counselingGrid.innerHTML = `<div class="col-span-3 text-center text-on-surface-variant/50 py-10">노출 중인 심리상담 종류가 없습니다.</div>`;
+  const records = await dbGetRecords();
+  const allTypes = await dbGetCounselingTypes(true);
+
+  // 현재 로그인한 내담자의 Pending 상태이고 아직 답변을 제출하지 않은 기록만 필터링
+  const assignedRecords = records.filter(r => 
+    r.clientId === currentClient.id && 
+    r.status === "Pending" && 
+    (!r.answers || r.answers.length === 0)
+  );
+
+  if (assignedRecords.length === 0) {
+    DOM.counselingGrid.innerHTML = `<div class="col-span-3 text-center text-on-surface-variant/50 py-10">배정받은 상담 내역이 없습니다. 데스크에 문의해주세요.</div>`;
     return;
   }
+
+  const list = [];
+  assignedRecords.forEach(rec => {
+    let typeObj = allTypes.find(t => t.id === rec.counselingTypeId);
+    if (!typeObj) {
+      typeObj = {
+        id: rec.counselingTypeId,
+        title: rec.counselingTitle,
+        description: "관리자가 배정해 주신 상담 프로그램입니다. 답변을 입력해 주세요.",
+        questions: []
+      };
+    }
+    list.push({
+      ...typeObj,
+      recordId: rec.id
+    });
+  });
 
   DOM.counselingGrid.innerHTML = "";
   list.forEach(opt => {
@@ -651,6 +775,7 @@ async function renderClientSelectCards() {
       card.querySelector(".icon-container").className = "w-12 h-12 rounded-xl bg-primary text-on-primary flex items-center justify-center icon-container transition-colors duration-300";
 
       selectedCounselingType = opt;
+      currentRecordId = opt.recordId;
       DOM.btnClientSubmit.disabled = false;
     });
 
@@ -693,6 +818,26 @@ function initClientQuestionnaire() {
         inputHtml = `
           <div class="ml-[28px] mt-sm flex flex-col md:flex-row gap-md">
             ${optionsHtml}
+          </div>
+        `;
+      } else if (q.type === "scale") {
+        inputHtml = `
+          <div class="ml-[28px] mt-md">
+            <div class="flex justify-between items-center px-sm mb-xs">
+              <span class="font-label-sm text-label-sm text-on-surface-variant">매우 낮음</span>
+              <span class="font-label-sm text-label-sm text-on-surface-variant">매우 높음</span>
+            </div>
+            <div class="flex justify-between items-center gap-xs md:gap-sm bg-surface-container-low p-sm rounded-xl border border-outline-variant/30 scale-btn-container">
+              <button type="button" class="scale-btn flex-1 py-sm rounded-lg hover:bg-surface-container-high transition-colors text-on-surface-variant hover:text-primary font-headline-sm border-2 border-transparent">1</button>
+              <div class="w-px h-6 bg-outline-variant/30 hidden md:block"></div>
+              <button type="button" class="scale-btn flex-1 py-sm rounded-lg hover:bg-surface-container-high transition-colors text-on-surface-variant hover:text-primary font-headline-sm border-2 border-transparent">2</button>
+              <div class="w-px h-6 bg-outline-variant/30 hidden md:block"></div>
+              <button type="button" class="scale-btn flex-1 py-sm rounded-lg hover:bg-surface-container-high transition-colors text-on-surface-variant hover:text-primary font-headline-sm border-2 border-transparent">3</button>
+              <div class="w-px h-6 bg-outline-variant/30 hidden md:block"></div>
+              <button type="button" class="scale-btn flex-1 py-sm rounded-lg hover:bg-surface-container-high transition-colors text-on-surface-variant hover:text-primary font-headline-sm border-2 border-transparent">4</button>
+              <div class="w-px h-6 bg-outline-variant/30 hidden md:block"></div>
+              <button type="button" class="scale-btn flex-1 py-sm rounded-lg hover:bg-surface-container-high transition-colors text-on-surface-variant hover:text-primary font-headline-sm border-2 border-transparent">5</button>
+            </div>
           </div>
         `;
       }
@@ -780,10 +925,12 @@ function initClientQuestionnaire() {
         </div>
       </div>
     `;
+  }
 
-    // 기본 척도형 버튼 인터랙션 바인딩
-    const scaleContainer = DOM.dynamicQuestionsContainer.querySelector(".scale-btn-container");
-    const btns = scaleContainer.querySelectorAll(".scale-btn");
+  // 모든 scale-btn-container에 대해 척도형 버튼 인터랙션 바인딩
+  const scaleContainers = DOM.dynamicQuestionsContainer.querySelectorAll(".scale-btn-container");
+  scaleContainers.forEach(container => {
+    const btns = container.querySelectorAll(".scale-btn");
     btns.forEach(btn => {
       btn.addEventListener("click", () => {
         btns.forEach(b => {
@@ -792,11 +939,12 @@ function initClientQuestionnaire() {
         btn.classList.add("bg-primary-container", "text-on-primary-container", "border-primary/20", "active");
       });
     });
-  }
+  });
 }
 
 // 설문지 답변 수집 후 데이터 최종 제출
-async function submitQuestionnaireAnswers() {
+async function submitQuestionnaireAnswers(e) {
+  if (e) e.preventDefault();
   const container = DOM.dynamicQuestionsContainer;
   const blocks = container.querySelectorAll(".question-block");
   const answers = [];
@@ -840,14 +988,18 @@ async function submitQuestionnaireAnswers() {
   }
 
   try {
-    await dbAddRecord(
-      currentClient.id,
-      currentClient.name,
-      currentClient.birthDate,
-      selectedCounselingType.id,
-      selectedCounselingType.title,
-      answers
-    );
+    if (currentRecordId) {
+      await dbSubmitRecordAnswers(currentRecordId, answers);
+    } else {
+      await dbAddRecord(
+        currentClient.id,
+        currentClient.name,
+        currentClient.birthDate,
+        selectedCounselingType.id,
+        selectedCounselingType.title,
+        answers
+      );
+    }
     showView("client-success");
   } catch (error) {
     console.error(error);
@@ -885,7 +1037,8 @@ function startSuccessCountdown() {
 // ============================================================================
 
 // 관리자 로그인
-function handleAdminLogin() {
+function handleAdminLogin(e) {
+  if (e) e.preventDefault();
   const username = DOM.adminUsername.value.trim();
   const password = DOM.adminPassword.value.trim();
 
@@ -993,14 +1146,46 @@ async function renderClientDirectory() {
       <td class="py-md px-md text-on-surface-variant">${birthStr}</td>
       <td class="py-md px-md text-on-surface-variant">${regDateStr}</td>
       <td class="py-md px-md">
-        <span class="inline-flex items-center px-sm py-xs rounded-md bg-surface-container-high text-on-surface-variant text-label-sm font-label-sm">
-          ${latest ? latest.counselingTitle : "없음"}
-        </span>
+        <div class="flex flex-col gap-xs">
+          ${clientRecords.length > 0 
+            ? clientRecords.map(r => `
+                <div class="h-6 flex items-center">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant text-[11px] font-medium leading-none whitespace-nowrap">
+                    ${r.counselingTitle}
+                  </span>
+                </div>
+              `).join("")
+            : '<div class="h-6 flex items-center"><span class="text-on-surface-variant/40 text-label-sm">없음</span></div>'
+          }
+        </div>
       </td>
       <td class="py-md px-md text-right">
-        <span class="inline-flex items-center px-sm py-xs rounded-full ${badgeClass} text-label-sm font-label-sm">
-          ${statusKo}
-        </span>
+        <div class="flex flex-col gap-xs items-end">
+          ${clientRecords.length > 0 
+            ? clientRecords.map(r => {
+                let currentBadgeClass = "bg-surface-container-high text-on-surface-variant";
+                let currentStatusKo = "미접수";
+                if (r.status === "Pending") {
+                  currentBadgeClass = "bg-amber-100 text-amber-700";
+                  currentStatusKo = "대기중";
+                } else if (r.status === "In Progress") {
+                  currentBadgeClass = "bg-blue-100 text-blue-700";
+                  currentStatusKo = "진행중";
+                } else if (r.status === "Completed") {
+                  currentBadgeClass = "bg-green-100 text-green-700";
+                  currentStatusKo = "완료";
+                }
+                return `
+                  <div class="h-6 flex items-center">
+                    <span class="inline-flex items-center px-sm py-xs rounded-full ${currentBadgeClass} text-[10px] font-semibold leading-none whitespace-nowrap">
+                      ${currentStatusKo}
+                    </span>
+                  </div>
+                `;
+              }).join("")
+            : '<div class="h-6 flex items-center"><span class="inline-flex items-center px-sm py-xs rounded-full bg-surface-container-high text-on-surface-variant text-[10px] font-semibold leading-none">미접수</span></div>'
+          }
+        </div>
       </td>
     `;
 
@@ -1216,11 +1401,16 @@ async function renderCounselingManagementGrid() {
 // 7. 내담자 상세 기록 Drawer 제어
 // ============================================================================
 async function openClientDrawer(client) {
+  currentDrawerClient = client;
+
   DOM.drawerClientName.textContent = client.name;
   DOM.drawerClientBirth.textContent = client.birthDate.replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3");
-  DOM.drawerClientPhone.textContent = client.phone || "연락처 미등록";
   DOM.drawerClientRegdate.textContent = new Date(client.createdAt).toLocaleDateString("ko-KR");
   DOM.drawerAvatar.textContent = getInitials(client.name);
+
+  // 연락처/생년월일 인풋 필드 기입
+  if (DOM.drawerInputPhone) DOM.drawerInputPhone.value = client.phone || "";
+  if (DOM.drawerInputBirth) DOM.drawerInputBirth.value = client.birthDate || "";
 
   // 배정 폼의 정보 기입
   DOM.formAssignCounseling.dataset.clientId = client.id;
@@ -1386,21 +1576,20 @@ function registerEventListeners() {
   // 질문지 최종 제출
   DOM.formClientQuestionnaire.addEventListener("submit", submitQuestionnaireAnswers);
 
-  // 최종 제출 취소
-  DOM.btnConfirmCancel.addEventListener("click", () => {
-    DOM.confirmModal.classList.add("opacity-0", "pointer-events-none");
-  });
-
-  // 최종 제출 확인
-  DOM.btnConfirmSubmitOk.addEventListener("click", submitCounseling);
 
   // 처음 화면으로 (로그아웃)
   DOM.btnClientLogout.addEventListener("click", () => {
+    currentClient = null;
+    selectedCounselingType = null;
+    currentRecordId = null;
     showView("client-login");
   });
 
   DOM.btnSuccessHome.addEventListener("click", () => {
     if (countdownTimer) clearInterval(countdownTimer);
+    currentClient = null;
+    selectedCounselingType = null;
+    currentRecordId = null;
     showView("client-login");
   });
 
@@ -1423,6 +1612,15 @@ function registerEventListeners() {
 
   // 관리자 로그아웃
   DOM.btnAdminLogout.addEventListener("click", handleAdminLogout);
+
+  // 관리자 새로고침
+  const btnAdminRefresh = document.getElementById("btn-admin-refresh");
+  if (btnAdminRefresh) {
+    btnAdminRefresh.addEventListener("click", () => {
+      refreshAdminDashboard();
+      showToast("대시보드가 새로고침되었습니다.");
+    });
+  }
 
   // 관리자 탭 메뉴 전환
   DOM.navClients.addEventListener("click", () => {
@@ -1461,7 +1659,8 @@ function registerEventListeners() {
   DOM.btnCloseRegisterOverlay.addEventListener("click", closeRegisterModal);
 
   // 내담자 등록 제출
-  DOM.formRegisterClient.addEventListener("submit", async () => {
+  DOM.formRegisterClient.addEventListener("submit", async (e) => {
+    if (e) e.preventDefault();
     const name = DOM.registerName.value.trim();
     const birth = DOM.registerBirth.value.trim().replace(/-/g, "");
     const phone = DOM.registerPhone.value.trim();
@@ -1534,7 +1733,8 @@ function registerEventListeners() {
   });
 
   // 상담 프로그램 등록 제출
-  DOM.formAddCounseling.addEventListener("submit", async () => {
+  DOM.formAddCounseling.addEventListener("submit", async (e) => {
+    if (e) e.preventDefault();
     const title = DOM.addCounselingTitle.value.trim();
     const desc = DOM.addCounselingDesc.value.trim();
 
@@ -1545,7 +1745,8 @@ function registerEventListeners() {
   });
 
   // 상담 프로그램 수정 완료 제출
-  DOM.formEditCounseling.addEventListener("submit", async () => {
+  DOM.formEditCounseling.addEventListener("submit", async (e) => {
+    if (e) e.preventDefault();
     const id = DOM.editCounselingId.value;
     const title = DOM.editCounselingTitle.value.trim();
     const desc = DOM.editCounselingDesc.value.trim();
@@ -1557,7 +1758,54 @@ function registerEventListeners() {
   });
 
   // 수동 배정 제출
-  DOM.formAssignCounseling.addEventListener("submit", handleAssignCounseling);
+  DOM.formAssignCounseling.addEventListener("submit", async (e) => {
+    if (e) e.preventDefault();
+    await handleAssignCounseling();
+  });
+
+  // 내담자 정보 수정 저장
+  const btnSaveClientInfo = document.getElementById("btn-save-client-info");
+  if (btnSaveClientInfo) {
+    btnSaveClientInfo.addEventListener("click", async () => {
+      if (!currentDrawerClient) return;
+      const updatedPhone = DOM.drawerInputPhone.value.trim();
+      const updatedBirth = DOM.drawerInputBirth.value.trim().replace(/[^0-9]/g, "");
+
+      if (updatedBirth.length !== 8) {
+        showToast("생년월일은 8자리 숫자(예: 19900101)로 입력해주세요.", "error");
+        return;
+      }
+
+      await dbUpdateClientInfo(currentDrawerClient.id, updatedPhone, updatedBirth);
+      showToast("내담자 인적사항이 수정되었습니다.");
+
+      // 로컬 정보 동기화 및 텍스트 갱신
+      currentDrawerClient.phone = updatedPhone;
+      currentDrawerClient.birthDate = updatedBirth;
+      DOM.drawerClientBirth.textContent = updatedBirth.replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3");
+
+      // 대시보드 새로고침
+      refreshAdminDashboard();
+    });
+  }
+
+  // 내담자 삭제
+  const btnDeleteClient = document.getElementById("btn-delete-client");
+  if (btnDeleteClient) {
+    btnDeleteClient.addEventListener("click", async () => {
+      if (!currentDrawerClient) return;
+      if (!confirm(`${currentDrawerClient.name} 내담자를 정말로 삭제하시겠습니까?\n해당 내담자의 모든 상담 기록도 함께 삭제됩니다.`)) {
+        return;
+      }
+
+      await dbDeleteClient(currentDrawerClient.id);
+      showToast("내담자가 삭제되었습니다.");
+
+      // Drawer 닫기 및 새로고침
+      window.closeDrawer();
+      refreshAdminDashboard();
+    });
+  }
 }
 
 // ============================================================================
