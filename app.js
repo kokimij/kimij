@@ -538,6 +538,79 @@ async function dbDeleteRecord(recordId) {
   }
 }
 
+async function dbGetNotes(clientId) {
+  if (window.isFirebaseMode) {
+    try {
+      const snap = await window.db.collection("counselingNotes")
+        .where("clientId", "==", clientId)
+        .get();
+      return snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => b.createdAt - a.createdAt);
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
+  } else {
+    const allNotes = JSON.parse(localStorage.getItem("crm_notes") || "[]");
+    return allNotes.filter(n => n.clientId === clientId).sort((a, b) => b.createdAt - a.createdAt);
+  }
+}
+
+async function dbAddNote(clientId, text) {
+  if (window.isFirebaseMode) {
+    await window.db.collection("counselingNotes").add({
+      clientId,
+      text,
+      createdAt: Date.now()
+    });
+  } else {
+    const allNotes = JSON.parse(localStorage.getItem("crm_notes") || "[]");
+    allNotes.push({
+      id: "note_" + Date.now(),
+      clientId,
+      text,
+      createdAt: Date.now()
+    });
+    localStorage.setItem("crm_notes", JSON.stringify(allNotes));
+  }
+}
+
+async function dbUpdateNote(noteId, text) {
+  if (window.isFirebaseMode) {
+    await window.db.collection("counselingNotes").doc(noteId).update({ text });
+  } else {
+    const allNotes = JSON.parse(localStorage.getItem("crm_notes") || "[]");
+    const idx = allNotes.findIndex(n => n.id === noteId);
+    if (idx !== -1) {
+      allNotes[idx].text = text;
+      localStorage.setItem("crm_notes", JSON.stringify(allNotes));
+    }
+  }
+}
+
+async function dbDeleteNote(noteId) {
+  if (window.isFirebaseMode) {
+    await window.db.collection("counselingNotes").doc(noteId).delete();
+  } else {
+    const allNotes = JSON.parse(localStorage.getItem("crm_notes") || "[]");
+    const updated = allNotes.filter(n => n.id !== noteId);
+    localStorage.setItem("crm_notes", JSON.stringify(updated));
+  }
+}
+
+async function dbGetAllNotes() {
+  if (window.isFirebaseMode) {
+    try {
+      const snap = await window.db.collection("counselingNotes").get();
+      return snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => b.createdAt - a.createdAt);
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
+  } else {
+    return JSON.parse(localStorage.getItem("crm_notes") || "[]").sort((a, b) => b.createdAt - a.createdAt);
+  }
+}
+
 // ============================================================================
 // 3. UI 및 상태 제어
 // ============================================================================
@@ -665,6 +738,9 @@ const DOM = {
   formAssignCounseling: document.getElementById("form-assign-counseling"),
   assignCounselingSelect: document.getElementById("assign-counseling-select"),
   drawerHistoryList: document.getElementById("drawer-history-list"),
+  drawerNoteInput: document.getElementById("drawer-note-input"),
+  btnSaveNote: document.getElementById("btn-save-note"),
+  drawerNotesList: document.getElementById("drawer-notes-list"),
   
   // 토스트 컨테이너
   toastContainer: document.getElementById("toastContainer")
@@ -680,7 +756,8 @@ const HASH_TO_VIEW = {
   "#/questionnaire": "client-questionnaire",
   "#/success": "client-success",
   "#/admin/login": "admin-login",
-  "#/admin/dashboard": "admin-dashboard"
+  "#/admin/customerlist": "admin-dashboard",
+  "#/admin/administration": "admin-dashboard"
 };
 
 const VIEW_TO_HASH = {
@@ -689,7 +766,7 @@ const VIEW_TO_HASH = {
   "client-questionnaire": "#/questionnaire",
   "client-success": "#/success",
   "admin-login": "#/admin/login",
-  "admin-dashboard": "#/admin/dashboard"
+  "admin-dashboard": "#/admin/customerlist"
 };
 
 // URL 해시를 변경하여 라우팅 유도
@@ -741,6 +818,20 @@ function renderView(viewId) {
     DOM.adminPassword.value = "";
   } else if (viewId === "admin-dashboard") {
     DOM.adminPortalView.classList.remove("hidden");
+    
+    // activeTab 상태에 따라 DOM 갱신
+    if (activeTab === "counseling") {
+      DOM.navClients.className = "w-full flex items-center px-md py-sm rounded-xl text-on-surface-variant hover:bg-surface-container-high/50 hover:text-on-surface transition-all group";
+      DOM.navCounseling.className = "w-full flex items-center px-md py-sm rounded-xl bg-primary-container text-on-primary-container font-semibold transition-all group";
+      DOM.tabClients.classList.add("hidden");
+      DOM.tabCounseling.classList.remove("hidden");
+    } else {
+      DOM.navClients.className = "w-full flex items-center px-md py-sm rounded-xl bg-primary-container text-on-primary-container font-semibold transition-all group";
+      DOM.navCounseling.className = "w-full flex items-center px-md py-sm rounded-xl text-on-surface-variant hover:bg-surface-container-high/50 hover:text-on-surface transition-all group";
+      DOM.tabClients.classList.remove("hidden");
+      DOM.tabCounseling.classList.add("hidden");
+    }
+    
     refreshAdminDashboard();
   }
 }
@@ -768,6 +859,13 @@ function handleRouting() {
     if (sessionStorage.getItem("crm_admin_logged") !== "true") {
       window.location.hash = "#/admin/login";
       return;
+    }
+    
+    // 해시 값에 따른 탭 자동 전환
+    if (hash === "#/admin/administration") {
+      activeTab = "counseling";
+    } else {
+      activeTab = "clients";
     }
   }
 
@@ -1257,9 +1355,11 @@ async function refreshAdminDashboard() {
 }
 
 // [탭 1] 내담자 디렉토리 렌더링
+// [탭 1] 내담자 디렉토리 렌더링
 async function renderClientDirectory() {
   const clients = await dbGetClients();
   const records = await dbGetRecords();
+  const notes = await dbGetAllNotes();
   const queryText = DOM.searchClient.value.toLowerCase().trim();
 
   // 대시보드 카드 지표 계산
@@ -1281,7 +1381,7 @@ async function renderClientDirectory() {
   if (filtered.length === 0) {
     DOM.clientListTableBody.innerHTML = `
       <tr>
-        <td colspan="5" class="py-md px-md text-center text-on-surface-variant/40">
+        <td colspan="6" class="py-md px-md text-center text-on-surface-variant/40">
           검색된 내담자 정보가 없습니다.
         </td>
       </tr>
@@ -1291,6 +1391,9 @@ async function renderClientDirectory() {
 
   filtered.forEach(client => {
     const clientRecords = records.filter(r => r.clientId === client.id);
+    const clientNotes = notes.filter(n => n.clientId === client.id).sort((a, b) => b.createdAt - a.createdAt);
+    const hasNotes = clientNotes.length > 0;
+    const latestNoteText = hasNotes ? clientNotes[0].text : "";
     const latest = clientRecords[0] || null;
 
     const tr = document.createElement("tr");
@@ -1303,23 +1406,6 @@ async function renderClientDirectory() {
     const regDateStr = new Date(client.createdAt).toLocaleDateString("ko-KR", {
       year: "numeric", month: "2-digit", day: "2-digit"
     });
-
-    // 상태 배지 매핑
-    let badgeClass = "bg-surface-container-high text-on-surface-variant";
-    let statusKo = "미접수";
-    
-    if (latest) {
-      if (latest.status === "Pending") {
-        badgeClass = "bg-amber-100 text-amber-700";
-        statusKo = "대기중";
-      } else if (latest.status === "In Progress") {
-        badgeClass = "bg-blue-100 text-blue-700";
-        statusKo = "진행중";
-      } else if (latest.status === "Completed") {
-        badgeClass = "bg-green-100 text-green-700";
-        statusKo = "완료";
-      }
-    }
 
     const initials = getInitials(client.name);
 
@@ -1334,6 +1420,28 @@ async function renderClientDirectory() {
       </td>
       <td class="py-md px-md text-on-surface-variant">${birthStr}</td>
       <td class="py-md px-md text-on-surface-variant">${regDateStr}</td>
+      <td class="py-md px-md">
+        ${hasNotes 
+          ? `
+            <div class="relative inline-block align-middle">
+              <span class="material-symbols-outlined text-green-600 hover:text-green-800 transition-colors cursor-pointer note-icon-btn text-[20px]">
+                description
+              </span>
+              <!-- 버블 팝업 -->
+              <div class="note-bubble absolute hidden z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-md bg-white rounded-2xl shadow-xl border border-surface-container-high text-xs text-on-surface text-left">
+                <div class="font-bold text-primary mb-xs">최신 상담 기록</div>
+                <div class="whitespace-pre-wrap max-h-24 overflow-y-auto">${latestNoteText}</div>
+                <div class="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-t-8 border-t-white border-x-8 border-x-transparent"></div>
+              </div>
+            </div>
+            `
+          : `
+            <span class="material-symbols-outlined text-surface-variant/40 pointer-events-none select-none text-[20px] align-middle">
+              description
+            </span>
+            `
+        }
+      </td>
       <td class="py-md px-md">
         <div class="flex flex-col gap-xs">
           ${clientRecords.length > 0 
@@ -1381,6 +1489,26 @@ async function renderClientDirectory() {
     tr.addEventListener("click", () => {
       openClientDrawer(client);
     });
+
+    if (hasNotes) {
+      const noteBtn = tr.querySelector(".note-icon-btn");
+      const bubble = tr.querySelector(".note-bubble");
+      
+      noteBtn.addEventListener("click", (e) => {
+        e.stopPropagation(); // 드로워 열림 방지
+        
+        // 다른 버블 모두 닫기
+        document.querySelectorAll(".note-bubble").forEach(b => {
+          if (b !== bubble) b.classList.add("hidden");
+        });
+        
+        bubble.classList.toggle("hidden");
+      });
+      
+      bubble.addEventListener("click", (e) => {
+        e.stopPropagation();
+      });
+    }
 
     DOM.clientListTableBody.appendChild(tr);
   });
@@ -1613,6 +1741,9 @@ async function openClientDrawer(client) {
   // 역사 타임라인 렌더링
   await renderClientHistoryTimeline(client.id);
 
+  // 상담 기록 리스트 렌더링
+  await renderClientNotesList(client.id);
+
   // Drawer 오픈 전역 JS 함수 호출
   window.openDrawer();
 }
@@ -1692,7 +1823,7 @@ async function renderClientHistoryTimeline(clientId) {
           </div>
           <!-- 진행 상태 조정 및 기록 삭제 영역 -->
           <div class="flex items-center gap-xs">
-            <select class="status-changer select-dropdown text-xs bg-white border border-outline-variant/50 rounded-lg px-2 py-1 focus:outline-none" data-record-id="${rec.id}">
+            <select class="status-changer select-dropdown text-xs bg-white border border-outline-variant/50 rounded-lg pl-2 pr-6 py-1 focus:outline-none" data-record-id="${rec.id}">
               <option value="Pending" ${rec.status === 'Pending' ? 'selected' : ''}>대기중</option>
               <option value="In Progress" ${rec.status === 'In Progress' ? 'selected' : ''}>진행중</option>
               <option value="Completed" ${rec.status === 'Completed' ? 'selected' : ''}>완료</option>
@@ -1728,6 +1859,79 @@ async function renderClientHistoryTimeline(clientId) {
     });
 
     DOM.drawerHistoryList.appendChild(item);
+  });
+}
+
+async function renderClientNotesList(clientId) {
+  const notes = await dbGetNotes(clientId);
+  DOM.drawerNotesList.innerHTML = "";
+
+  if (notes.length === 0) {
+    DOM.drawerNotesList.innerHTML = `<div class="text-center py-4 text-on-surface-variant/40 text-xs">등록된 상담 기록이 없습니다.</div>`;
+    return;
+  }
+
+  notes.forEach(note => {
+    const item = document.createElement("div");
+    item.className = "bg-surface p-sm rounded-xl border border-surface-container-high flex flex-col gap-xs";
+
+    const dateStr = new Date(note.createdAt).toLocaleDateString("ko-KR") + " " +
+                    new Date(note.createdAt).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false });
+
+    item.innerHTML = `
+      <div class="flex justify-between items-center text-xs text-on-surface-variant">
+        <span>등록일시: ${dateStr}</span>
+        <div class="flex items-center gap-xs">
+          <button class="btn-edit-note hover:text-primary transition-colors p-xs" data-note-id="${note.id}">수정</button>
+          <span>|</span>
+          <button class="btn-delete-note hover:text-error transition-colors p-xs" data-note-id="${note.id}">삭제</button>
+        </div>
+      </div>
+      <div class="note-text text-body-md text-on-surface whitespace-pre-wrap mt-xs">${note.text}</div>
+    `;
+
+    // 삭제 버튼 리스너
+    item.querySelector(".btn-delete-note").addEventListener("click", async () => {
+      if (confirm("이 상담 기록을 삭제하시겠습니까?")) {
+        await dbDeleteNote(note.id);
+        showToast("상담 기록이 삭제되었습니다.");
+        renderClientNotesList(clientId);
+        refreshAdminDashboard();
+      }
+    });
+
+    // 수정 버튼 리스너
+    item.querySelector(".btn-edit-note").addEventListener("click", () => {
+      const textDiv = item.querySelector(".note-text");
+      const currentText = note.text;
+      
+      // 인라인 에디터로 전환
+      item.innerHTML = `
+        <textarea class="edit-note-textarea w-full bg-surface-container-low border border-surface-container-high rounded-xl p-sm font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-on-surface resize-none h-20">${currentText}</textarea>
+        <div class="flex justify-end gap-xs mt-xs">
+          <button class="btn-cancel-edit-note text-xs px-2 py-1 rounded hover:bg-surface-container-high">취소</button>
+          <button class="btn-save-edit-note text-xs px-2 py-1 bg-primary text-on-primary rounded hover:bg-surface-tint">저장</button>
+        </div>
+      `;
+
+      item.querySelector(".btn-cancel-edit-note").addEventListener("click", () => {
+        renderClientNotesList(clientId);
+      });
+
+      item.querySelector(".btn-save-edit-note").addEventListener("click", async () => {
+        const nextText = item.querySelector(".edit-note-textarea").value.trim();
+        if (!nextText) {
+          showToast("기록 내용을 입력해주세요.", "error");
+          return;
+        }
+        await dbUpdateNote(note.id, nextText);
+        showToast("상담 기록이 수정되었습니다.");
+        renderClientNotesList(clientId);
+        refreshAdminDashboard();
+      });
+    });
+
+    DOM.drawerNotesList.appendChild(item);
   });
 }
 
@@ -1842,21 +2046,11 @@ function registerEventListeners() {
 
   // 관리자 탭 메뉴 전환
   DOM.navClients.addEventListener("click", () => {
-    DOM.navClients.className = "w-full flex items-center px-md py-sm rounded-xl bg-primary-container text-on-primary-container font-semibold transition-all group";
-    DOM.navCounseling.className = "w-full flex items-center px-md py-sm rounded-xl text-on-surface-variant hover:bg-surface-container-high/50 hover:text-on-surface transition-all group";
-    DOM.tabClients.classList.remove("hidden");
-    DOM.tabCounseling.classList.add("hidden");
-    activeTab = "clients";
-    refreshAdminDashboard();
+    window.location.hash = "#/admin/customerlist";
   });
 
   DOM.navCounseling.addEventListener("click", () => {
-    DOM.navClients.className = "w-full flex items-center px-md py-sm rounded-xl text-on-surface-variant hover:bg-surface-container-high/50 hover:text-on-surface transition-all group";
-    DOM.navCounseling.className = "w-full flex items-center px-md py-sm rounded-xl bg-primary-container text-on-primary-container font-semibold transition-all group";
-    DOM.tabClients.classList.add("hidden");
-    DOM.tabCounseling.classList.remove("hidden");
-    activeTab = "counseling";
-    refreshAdminDashboard();
+    window.location.hash = "#/admin/administration";
   });
 
   // 내담자 실시간 이름 검색
@@ -2007,6 +2201,25 @@ function registerEventListeners() {
     });
   }
 
+  // 상담 기록 등록
+  const btnSaveNote = DOM.btnSaveNote;
+  if (btnSaveNote) {
+    btnSaveNote.addEventListener("click", async () => {
+      if (!currentDrawerClient) return;
+      const text = DOM.drawerNoteInput.value.trim();
+      if (!text) {
+        showToast("기록할 내용을 입력해주세요.", "error");
+        return;
+      }
+
+      await dbAddNote(currentDrawerClient.id, text);
+      showToast("상담 기록이 등록되었습니다.");
+      DOM.drawerNoteInput.value = "";
+      await renderClientNotesList(currentDrawerClient.id);
+      refreshAdminDashboard();
+    });
+  }
+
   // 내담자 삭제
   const btnDeleteClient = document.getElementById("btn-delete-client");
   if (btnDeleteClient) {
@@ -2024,6 +2237,11 @@ function registerEventListeners() {
       refreshAdminDashboard();
     });
   }
+
+  // 문서 전체 클릭 시 모든 상담 기록 버블 닫기
+  document.addEventListener("click", () => {
+    document.querySelectorAll(".note-bubble").forEach(b => b.classList.add("hidden"));
+  });
 }
 
 // ============================================================================
